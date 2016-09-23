@@ -91,21 +91,22 @@ class PantagModularAction(ModularAction):
     def apply(self, result):
 
         # Extract the IP that needs to be tagged
+        ip = None
         for field in IP_FIELDS:
             if field in result:
-                self.ip = result[field]
+                ip = result[field]
                 break
         # Couldn't find a field with an IP
-        if not hasattr(self, 'ip'):
+        if ip is None:
             modaction.message('Unable to find IP to tag', status='failure', rids=self.rids, level=logging.ERROR)
             return
 
         if self.action == "add":
-            self.logger.debug("Registering tags on firewall %s: %s - %s" % (self.device, self.ip, self.tags))
-            self.firewall.userid.register(self.ip, self.tags)
+            self.logger.debug("Registering tags on firewall %s: %s - %s" % (self.device, ip, self.tags))
+            self.firewall.userid.register(ip, self.tags)
         else:
-            self.logger.debug("Unregistering tags on firewall %s: %s - %s" % (self.device, self.ip, self.tags))
-            self.firewall.userid.unregister(self.ip, self.tags)
+            self.logger.debug("Unregistering tags on firewall %s: %s - %s" % (self.device, ip, self.tags))
+            self.firewall.userid.unregister(ip, self.tags)
 
         self.resultcount += 1
 
