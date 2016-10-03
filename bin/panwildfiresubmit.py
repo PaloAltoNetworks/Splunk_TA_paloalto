@@ -69,10 +69,17 @@ class PanWildFireSubmitModularAction(ModularAction):
         # Couldn't find a field with a URL
         if url is None:
             modaction.message('Unable to find field with URL to submit', status='failure', rids=self.rids, level=logging.ERROR)
-            return
+            raise KeyError("Unable to find field with URL to submit, need field 'url'")
 
         self.logger.debug("Submitting URL to WildFire: %s" % url)
-        self.wfapi.submit(url=url)
+        try:
+            self.wfapi.submit(url=url)
+        except pan.wfapi.PanWFapiError as e:
+            if str(e).startswith("HTTP Error 422: Unprocessable Entities") \
+                    or str(e).startswith("HTTP Error 418: Unsupport File Type"):
+                self.logger.debug("URL is not a file that can be processed by WildFire: %s" % url)
+            else:
+                raise e
         self.resultcount += 1
 
 
@@ -98,7 +105,7 @@ if __name__ == "__main__":
                 modaction.invoke()
                 modaction.apply(result)
 
-        modaction.message("Submitted %s urls to WildFire for analysis" % modaction.resultcount,
+        modaction.message("Submitted urls to WildFire for analysis",
                           status='success',
                           rids=modaction.rids
                           )
