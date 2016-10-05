@@ -26,7 +26,7 @@ Documentation for this add-on is located at: http://pansplunk.readthedocs.io/
 
 ### Documentation ###
 
-**Installation and Getting Started:** http://pansplunk.readthedocs.io/en/latest/getting_started.html
+**Installation and Getting Started:** http://pansplunk.readthedocs.io/en/latest/getting_started.html  
 **Release Notes:** http://pansplunk.readthedocs.io/en/latest/release_notes.html  
 **Support:** http://pansplunk.readthedocs.io/en/latest/support.html
 
