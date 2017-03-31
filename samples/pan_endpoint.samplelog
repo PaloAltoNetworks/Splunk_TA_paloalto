@@ -1,8 +1,12 @@
 Oct 06 2015 12:55:02 Host CEF:0|Palo Alto Networks|Traps Agent|3.3.2.9456|Access Violation|Threat|9|rt=Mar 09 2016 16:45:17 shost=SERVER2008R2QA duser=picard cs2Label=Module cs2= msg=Access Violation- child process: notepad.exe
 Oct 06 2015 12:55:02 Host CEF:0|Palo Alto Networks|Traps Agent|3.3.2.9456|Agent Policy Changed|Agent|3|rt=Mar 09 2016 15:50:04 shost=SERVER2008R2QA suser=picard msg=Policy changed
-Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=TRAPS-WIN7X86 duser=picard msg=Service is alive
-Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=TRAPS-WIN7X86 duser=picard msg=Service is alive
-Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=TRAPS-WIN7X86 duser=picard msg=Service is alive
+Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=PICARD-WIN10X86 duser=picard msg=Service is alive
+Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=CRUSHER-WIN7X86 duser=crusher msg=Service is alive
+Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=RIKER-WIN10X86 duser=riker msg=Service is alive
+Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=JORDY-WIN7X86 duser=jordy msg=Service is alive
+Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=TROY-WIN7X86 duser=troy msg=Service is alive
+Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=COUNSELOR-WIN7X86 duser=counselor msg=Service is alive
+Mar 22 2017 23:40:06 10.5.174.141 CEF:0|Palo Alto Networks|Traps Agent|3.4.3.19949|Heartbeat|Agent|3|rt=Mar 22 2017 23:40:06 dhost=COUNSELOR-WIN10X86 duser=counselor msg=Service is alive
 Oct 06 2015 12:55:02 Host CEF:0|Palo Alto Networks|Traps Agent|3.3.2.9456|Process Crashed|Agent|6|rt=Mar 09 2016 16:02:26 dhost=WIN7-DOMAIN-64 duser=picard deviceProcessName= msg= Process  had crashed
 Oct 06 2015 12:55:02 Host CEF:0|Palo Alto Networks|Traps Agent|3.3.2.9456|Process Injection Time Out|Agent|6|rt=Mar 09 2016 17:17:19 dhost=WIN7-DOMAIN-64 duser=picard deviceProcessName=notepad msg=Injection Timeout
 Oct 06 2015 12:55:02 Host CEF:0|Palo Alto Networks|Traps Agent|3.3.2.9456|Reporting Service Start Failed|Agent|9|rt=Mar 10 2016 13:40:39 dhost=WIN7-DOMAIN-64 duser=picard msg=ReportingService start failed.
