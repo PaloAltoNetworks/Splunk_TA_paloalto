@@ -135,7 +135,7 @@ class KvStoreHandler(object):
         '''
         uri = '/servicesNS/{owner}/{app}/storage/collections/data/{collection}/batch_save'.format(**options)
         if not isinstance(records, list):
-            records = [records]
+            records = [records, ]
         
         if not time_field:
             time_field = '_time'
