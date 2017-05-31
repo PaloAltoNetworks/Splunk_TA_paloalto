@@ -6,6 +6,8 @@ block-ip,blocked
 block-url,blocked
 deny,blocked
 drop,dropped
+drop-all-packets,dropped
+drop-packet,dropped
 Failed,failure
 forward,unknown
 reset-both,blocked
