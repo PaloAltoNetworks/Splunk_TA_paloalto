@@ -1,103 +1,19 @@
-require([
-    'jquery',
-    "splunkjs/mvc/simplexml/ready!"
-], function(
-    $
-) {
+$(document).ready(function() {
 
-function return_status_banner() {
-    return '<div id="info_banner" class="info">Successfully updated configuration for add-on "Splunk_TA_paloalto". </div>' +
-    '<div id="save_err_banner" class="error">Fail to update configuration for add-on "Splunk_TA_paloalto". </div>' +
-    '<div id="load_err_banner" class="error">Fail to load configuration for add-on "Splunk_TA_paloalto". </div>';
-}
+    // 0) global vars
+    // FIXME for the ebox_id, it will be different from TA to TA.
+    var allSettingsEboxId = "#\\/Splunk_TA_paloalto_input_setup\\/Splunk_TA_paloalto_settings\\/Splunk_TA_paloalto_settings\\/all_settings_id";
 
-function return_page() {
-    return '<div class="entityEditForm"><div class="formWrapper">' +
-                '<div class="fieldsetWrapper" id="credSettingId">' +
-                    '<fieldset>' +
-                        '<legend>PAN Device Credentials</legend>' +
-                        '<p>These are the credentials that will be used to communicate with your Palo Alto Networks Firewall or Panorama.</p>' +
-                        '<div>' +
-                            '<a class="color-gray mgr-16 credBtn btn" id="passwordBtnAdd">Add Account</a>' +
-                        '</div>' +
-                        '<br>' +
-                        '<br>' +
-                        '<div>' +
-                            '<table id="passwordCredTable" class="table mg-10" style="display: table;">' +
-                                '<thead class="tableHead">' +
-                                    '<tr>' +
-                                    '</tr>' +
-                                '</thead>' +
-                                '<tbody class="tableBody">' +
-                                '</tbody>' +
-                            '</table>' +
-                        '</div>' +
-                    '</fieldset>' +
-                '</div>' +
-                '<div class="fieldsetWrapper" id="wildfire_SettingId">' +
-                    '<fieldset>' +
-                        '<legend>WildFire Cloud API Key</legend>' +
-                        '<p class="helpText"> Used to retrieve reports from the WildFire Cloud.  An API Key is available from the WildFire Portal (<a href="https://wildfire.paloaltonetworks.com" target="_blank">https://wildfire.paloaltonetworks.com</a>).</p>' +
-                        '<div class="widget" style="display: block;">' +
-                            '<label>WildFire API Key</label>' +
-                            '<div>' +
-                                '<input class="index_input" type="password" id="wildfire_api_key_id">' +
-                            '</div>' +
-                            '<div class="widgeterror" style="display: none;">' +
-                            '</div>' +
-                        '</div>' +
-                    '</fieldset>' +
-                '</div>' +
-                '<div class="fieldsetWrapper" id="AF_SettingId">' +
-                    '<fieldset>' +
-                        '<legend>AutoFocus API Key</legend>' +
-                        '<p class="helpText"> Used to retrieve reports from the AutoFocus Cloud. (<a href="https://www.paloaltonetworks.com/documentation/autofocus/autofocus/autofocus_api/get-started-with-the-autofocus-api/get-your-api-key#36712" target="_blank">Get Your API Key</a>).</p>' +
-                        '<div class="widget" style="display: block;">' +
-                            '<label>AutoFocus API Key</label>' +
-                            '<div>' +
-                                '<input class="index_input" type="password" id="autofocus_api_key_id">' +
-                            '</div>' +
-                            '<div class="widgeterror" style="display: none;">' +
-                            '</div>' +
-                        '</div>' +
-                    '</fieldset>' +
-                '</div>' +
-                '<div class="shadow">' +
-                '</div>' +
-            '</div> <!-- end of form_wrapper-->' +
-            '<div class="dialog passwordCredDialog">' +
-                '<div id="passwordCredDialog" class="dialog-header color-gray pd-16">' +
-                    'Add Account' +
-                '</div>' +
-                '<div class="dialog-content pd-16">' +
-                    '<form autocomplete="off" id="passwordCredForm" class="credform">' +
-                    '</form>' +
-                '</div>' +
-            '</div>' +
-            '<div class="jmFormActions" style="">' +
-                    '<button class="my-btn-secondary" type="button"><span>Cancel</span></button>' +
-                    '<button type="submit" class="my-btn-primary"><span>Save</span></button>' +
-            '</div>' +
-        '</div></div>';
-}
+    function return_status_banner() {
+        return '<div id="info_banner" class="info">Successfully updated configuration for add-on "Splunk_TA_paloalto". </div>' +
+        '<div id="save_err_banner" class="error">Fail to update configuration for add-on "Splunk_TA_paloalto". </div>' +
+        '<div id="load_err_banner" class="error">Fail to load configuration for add-on "Splunk_TA_paloalto". </div>';
+    }
 
-function return_cred_form() {
-        return '<div class="dialog">' +
-            '<div class="dialog-header pd-16">' +
-                'Add New Credentials' +
-            '</div>' +
-            '<div class="dialog-content pd-16">' +
-                '<form autocomplete="off" id="form">' +
-                '</form>' +
-            '</div>' +
-        '</div>';
-}
-
-
-// begin to process the doc
+    // begin to process the doc
     var appname = Splunk.util.getCurrentApp();
     // load css
-    var cssLinks = [ '/en-US/static/css/view.css', '/en-US/static/css/skins/default/default.css', '/en-US/static/css/print.css', '/en-US/static/css/tipTip.css', '/en-US/static/build/css/splunk-components-enterprise.css', '/en-US/static/css/admin.css'];
+    var cssLinks = [ '/en-US/static/app/' + appname + '/setup.css'];
     for(var i = 0; i < cssLinks.length; i++) {
         $("<link>").attr({
             rel: "stylesheet",
@@ -105,6 +21,7 @@ function return_cred_form() {
             href: cssLinks[i],
         }).appendTo("head");
     }
+
     // remove bootstrap-enterprise.css
     $("head").find("link[type='text/css']").each(function(idx) {
         var ele = $(this);
@@ -113,10 +30,16 @@ function return_cred_form() {
         }
     });
     // generate the html
+
+
+     // 2) Append new html
+    var originFormWrapper = $(".entityEditForm");
+    originFormWrapper.css("display", "none");
+    originFormWrapper.before(return_page());
     $("body").prepend(return_status_banner());
-    $('#setup_page_container').html(return_page());
     $('#info_banner').hide();
     $('#save_err_banner').hide();
+    $('.messaging').hide();
     $('#load_err_banner').hide();
 
     var currentAction = "New";
@@ -385,7 +308,7 @@ function return_cred_form() {
 
     function updateTable(tableId, tableData, cols){
         tableLength = tableData.length;
-        // console.log("ROW COUNT: " + tableLength);
+        console.log("ROW COUNT: " + tableLength);
         if(tableLength >= 1) {
             $('#passwordBtnAdd').hide();
         } else {
@@ -422,16 +345,24 @@ function return_cred_form() {
 
 
     function updateCustomizedSettings(settings) {
-        if (settings.customized_settings === undefined) {
+        if (settings.customized_settings.wildfire_api_key === undefined || settings.customized_settings.autofocus_api_key === undefined) {
             return;
         }
-        if (settings.customized_settings["autofocus_api_key"]){
+        if (settings.customized_settings["autofocus_api_key"]["password"] != ''){
             $("#autofocus_api_key_id").val(settings["customized_settings"]["autofocus_api_key"]["password"]);
         }
-        if (settings.customized_settings["wildfire_api_key"]){
+        if (settings.customized_settings["wildfire_api_key"]["password"] != ''){
             $("#wildfire_api_key_id").val(settings["customized_settings"]["wildfire_api_key"]["password"]);
         }
     };
+    // Adding this feature to prevent overwriting api keys.
+    function disableInput(input) {
+        console.log('lets disbale input');
+        $("#wildfire_api_key_id").hide();
+    }
+    function enableInput(input) {
+
+    }
 
     function getJSONResult() {
         var result = {};
@@ -457,6 +388,7 @@ function return_cred_form() {
                 result[k][temp[credTable.columns[0].id]] = temp;
                 delete temp[credTable.columns[0].id];
             }
+            console.log('hi' + JSON.stringify(result[k]));
         }
 
         // Customized Settings
@@ -492,7 +424,8 @@ function return_cred_form() {
     var saving = false;
     $(".my-btn-primary span").html("Save");
     function saveSettings() {
-        // var jsonResult = JSON.stringify(getJSONResult());
+        var jsonResult = JSON.stringify(getJSONResult());
+        console.log(jsonResult);
         $.ajax({
             url:"/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/Splunk_TA_paloalto_input_setup/Splunk_TA_paloalto_settings/Splunk_TA_paloalto_settings",
             type: "POST",
@@ -528,21 +461,39 @@ function return_cred_form() {
     });
 
     // TODO: use ajax to load the settings and render the page
+    // We have to get API keys independently
+
+    // https://localhost:8089/servicesNS/nobody/Splunk_TA_paloalto/storage/passwords/Splunk_TA_paloalto:autofocus_api_key
+
+    //Get Wildfire API key
     $.ajax({
-        url: "/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/Splunk_TA_paloalto_input_setup/Splunk_TA_paloalto_settings/Splunk_TA_paloalto_settings",
+        url: "/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/",
         data: {
             "output_mode": "json"
         },
         type: "GET",
         dataType : "json",
     }).done(function(response) {
-        var allSettings = null;
-        if (response.entry && response.entry.length > 0) {
-            allSettings = $.parseJSON(response.entry[0].content.all_settings);
+        console.log(response.entry);
+        var customized_settings = {}; 
+        var credential_settings = {}; 
+        for(var i = 0; i < response.entry.length; i++){
+            var name = response.entry[i].name;
+            // console.log(name);
+            var array = name.split(":");
+            if(array[0] == "Splunk_TA_paloalto") {
+                if( array[1] == "autofocus_api_key" || array[1] == "wildfire_api_key") {
+                    customized_settings[array[1]] = $.parseJSON(response.entry[i].content.clear_password);
+                } else {
+                    credential_settings[array[1]] = $.parseJSON(response.entry[i].content.clear_password);
+                }
+            }
         }
-        // console.log(allSettings);
+
+        var allSettings = {customized_settings, credential_settings};
+        console.log(allSettings);
         //parse the data
-        updateGlobalSettings(allSettings);
+        // updateGlobalSettings(allSettings);
         updateCustomizedSettings(allSettings);
         var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
         tables = {
@@ -586,4 +537,64 @@ function return_cred_form() {
         console.log(status, response);
     });
 
-}); // the end of require
+
+    //THIS AJAX call has bugs Need to wait for Splunk to fix the endpoint.
+    // $.ajax({
+    //     url: "/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/Splunk_TA_paloalto_input_setup/Splunk_TA_paloalto_settings/Splunk_TA_paloalto_settings",
+    //     data: {
+    //         "output_mode": "json"
+    //     },
+    //     type: "GET",
+    //     dataType : "json",
+    // }).done(function(response) {
+    //     var allSettings = null;
+    //     if (response.entry && response.entry.length > 0) {
+    //         allSettings = $.parseJSON(response.entry[0].content.all_settings);
+    //     }
+    //     console.log(allSettings);
+    //     //parse the data
+    //     // updateGlobalSettings(allSettings);
+    //     updateCustomizedSettings(allSettings);
+    //     var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
+    //     tables = {
+    //         "passwordCredTable": {
+    //             "id": "passwordCredTable",
+    //             "columns": passwordColumns,
+    //             "data": passwordCreds.data,
+    //             "dataMap": passwordCreds.dataMap,
+    //         },
+    //     };
+    //     dialogs = {
+    //         "passwordCredDialog": {
+    //             "id": "passwordCredDialog",
+    //             "btnId": "passwordBtnAdd",
+    //             "formId": "passwordCredForm",
+    //             "table": tables.passwordCredTable,
+    //         },
+    //     };
+    //     for (var dialogId in dialogs) {
+    //         enjectDialogForm(dialogId, dialogs[dialogId].formId, dialogs[dialogId].table.columns);
+    //         registerBtnClickHandler(dialogId);
+    //     }
+    //     for (var tableId in tables) {
+    //         updateHeaders(tableId, tables[tableId].columns);
+    //         hideColumns(tableId, tables[tableId].columns);
+    //         updateTable(tableId, tables[tableId].data, tables[tableId].columns);
+    //     }
+    //     for (var dialogId in dialogs) {
+    //         $("#" + dialogs[dialogId].formId).submit(submitHandler);
+    //         $("#" + dialogs[dialogId].formId + " input").off("keypress").keypress(dialogId, function(e) {
+    //             if (e.which == 13) {
+    //                 $("#" + e.data + "BtnSave").click();
+    //                 return false;
+    //             }
+    //         });
+    //     }
+    // }).fail(function(xhr, status, response) {
+    //     $('#load_err_banner').show();
+    //     $('#save_err_banner').hide();
+    //     $('#info_banner').hide();
+    //     console.log(status, response);
+    // });
+
+})
