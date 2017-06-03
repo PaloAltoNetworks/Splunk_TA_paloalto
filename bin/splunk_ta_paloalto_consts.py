@@ -1,16 +1,12 @@
-globalsetting_key = "global_settings"
-
 name = "name"
 value = "value"
 
 password = "password"
-proxy_password = "proxy_password"
 removed = "removed"
 
 all_settings = "all_settings"
 myta_settings = "Splunk_TA_paloalto_settings"
 global_settings = "global_settings"
-proxy_settings = "proxy_settings"
 myta_credential_settings = "credential_settings"
 myta_customized_settings = "customized_settings"
 

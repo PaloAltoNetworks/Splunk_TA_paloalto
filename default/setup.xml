@@ -6,8 +6,8 @@
         </input>
         <text>
             <![CDATA[
-                <script type="text/javascript" src="/en-US/static/app/Splunk_TA_paloalto/setup.js"></script>
-                <script type="text/javascript" src="/en-US/static/app/Splunk_TA_paloalto/setup_page.js"></script>
+                <script type="text/javascript" src="/en-US/static/app/Splunk_TA_paloalto/js/setup.js"></script>
+                <script type="text/javascript" src="/en-US/static/app/Splunk_TA_paloalto/js/setup_page.js"></script>
             ]]>
         </text>
     </block>

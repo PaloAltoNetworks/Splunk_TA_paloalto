@@ -9,52 +9,34 @@ configuration page.
     handleEdit method: controls the parameters and saves the values
     corresponds to handleractions = edit in restmap.conf
 """
-import splunk_ta_paloalto_declare
 
 import json
 import splunk.clilib.cli_common as scc
 import splunk.admin as admin
 
 
-import solnlib.utils as utils
-import solnlib.log as log
-import solnlib.conf_manager as conf
-import splunk_ta_paloalto_consts as setup_const
+import splunktalib.common.util as utils
+import splunktalib.common.log as log
+from splunktalib.conf_manager import ta_conf_manager as ta_conf
+from splunktalib.conf_manager import conf_manager as conf
+import splunk_ta_paloalto_consts as c
 
-log.Logs.set_context(namespace="splunk_ta_paloalto")
 logger = log.Logs().get_logger("setup")
 
-def get_or_create_conf_file(conf_mgr, file_name):
-    try:
-        conf_file = conf_mgr.get_conf(file_name)
-        return conf_file
-    except conf.ConfManagerException as cme:
-        conf_mgr._confs.create(file_name)
-        return conf_mgr.get_conf(file_name, refresh=True)
-
-def filter_eai_property(stanza):
-    if isinstance(stanza, dict):
-        for k in list(stanza.keys()):
-            if k.startswith('eai:'):
-                del stanza[k]
-            else:
-                stanza[k] = filter_eai_property(stanza[k])
-    return stanza
 
 class ConfigApp(admin.MConfigHandler):
     valid_args = ("all_settings",)
 
     stanza_map = {
-        setup_const.global_settings: True,
-        setup_const.myta_credential_settings: True,
-        setup_const.myta_customized_settings: True,
+        c.global_settings: True,
+        c.myta_credential_settings: True,
+        c.myta_customized_settings: True,
     }
 
-    global_cred_fields = [setup_const.proxy_password, setup_const.password]
-    cred_fields = [setup_const.password]
-    encrypt_fields_credential = (setup_const.password,)
-    encrypt_fields_customized = (setup_const.password,)
-    cred_confs = ((setup_const.myta_credential_settings, setup_const.myta_credential_conf),)
+    cred_fields = (c.password,)
+    encrypt_fields_credential = (c.password,)
+    encrypt_fields_customized = (c.password,)
+    cred_confs = ((c.myta_credential_settings, c.myta_credential_conf),)
 
     def setup(self):
         """
@@ -65,80 +47,104 @@ class ConfigApp(admin.MConfigHandler):
                 self.supportedArgs.addOptArg(arg)
 
     def handleList(self, confInfo):
-        logger.info("start list setup configure.")
-        scheme, host, port = utils.extract_http_scheme_host_port(scc.getMgmtUri())
-        conf_mgr = conf.ConfManager(self.getSessionKey(), self.appName, scheme=scheme, host=host, port=port)
-        ta_conf_file = get_or_create_conf_file(conf_mgr, setup_const.myta_conf)
+        logger.info("start list")
+        conf_mgr = conf.ConfManager(scc.getMgmtUri(), self.getSessionKey())
+        conf_mgr.reload_conf(c.myta_conf)
+        conf_mgr.reload_conf(c.myta_credential_conf)
+        conf_mgr.reload_conf(c.myta_customized_conf)
         # read globala and proxy settings
-        all_settings = ta_conf_file.get_all()
+        all_settings = conf_mgr.all_stanzas_as_dicts(c.myta_conf)
         if not all_settings:
             all_settings = {}
-        self._setNoneValues(all_settings.get(setup_const.global_settings, {}))
+        self._setNoneValues(all_settings.get(c.global_settings, {}))
         # read account credential settings
         for cred, cred_conf in self.cred_confs:
-            cred_conf_file = get_or_create_conf_file(conf_mgr, cred_conf)
-            creds = cred_conf_file.get_all()
+            ta_conf_mgr = ta_conf.TAConfManager(
+                cred_conf, scc.getMgmtUri(), self.getSessionKey())
+            ta_conf_mgr.set_encrypt_keys(self.encrypt_fields_credential)
+            creds = ta_conf_mgr.all(return_acl=False)
             if creds:
                 self._setNoneValues(creds)
                 all_settings.update({cred: creds})
-        # customized conf
-        customized_conf_file = get_or_create_conf_file(conf_mgr, setup_const.myta_customized_conf)
-        settings = customized_conf_file.get_all()
-        all_settings[setup_const.myta_customized_settings] = settings
-
+        # read customized settings
+        ta_conf_mgr = ta_conf.TAConfManager(
+            c.myta_customized_conf, scc.getMgmtUri(), self.getSessionKey())
+        ta_conf_mgr.set_encrypt_keys(self.encrypt_fields_customized)
+        customized_settings = ta_conf_mgr.all(return_acl=False)
+        all_settings.update({c.myta_customized_settings: customized_settings})
         self._clearPasswords(all_settings, self.cred_fields)
-        all_settings = filter_eai_property(all_settings)
         all_settings = json.dumps(all_settings)
         all_settings = utils.escape_json_control_chars(all_settings)
-        confInfo[setup_const.myta_settings].append(setup_const.all_settings, all_settings)
-        logger.info("list setup configure is done.")
+        confInfo[c.myta_settings].append(c.all_settings, all_settings)
+        logger.info("end list")
 
     def handleEdit(self, confInfo):
-        logger.info("start edit setup configure.")
-        scheme, host, port = utils.extract_http_scheme_host_port(scc.getMgmtUri())
-        conf_mgr = conf.ConfManager(self.getSessionKey(), self.appName, scheme=scheme, host=host, port=port)
-        ta_conf_file = get_or_create_conf_file(conf_mgr, setup_const.myta_conf)
-        customized_conf_file = get_or_create_conf_file(conf_mgr, setup_const.myta_customized_conf)
-        all_origin_settings = ta_conf_file.get_all()
+        logger.info("start edit")
+        conf_mgr = conf.ConfManager(scc.getMgmtUri(), self.getSessionKey(),
+                                    app_name=self.appName)
+        conf_mgr.reload_conf(c.myta_conf)
+        conf_mgr.reload_conf(c.myta_credential_conf)
+        conf_mgr.reload_conf(c.myta_customized_conf)
+        all_origin_settings = conf_mgr.all_stanzas_as_dicts(c.myta_conf)
         all_settings = utils.escape_json_control_chars(
-            self.callerArgs.data[setup_const.all_settings][0])
+            self.callerArgs.data[c.all_settings][0])
         all_settings = json.loads(all_settings)
-        # write global and proxy settings
-        self._updateGlobalSettings(setup_const.global_settings, all_settings,
-                                   all_origin_settings, ta_conf_file)
-        # write customized settings
-        customized_conf_file = get_or_create_conf_file(conf_mgr, setup_const.myta_customized_conf)
-        self._updateConfStanzas(all_settings.get(setup_const.myta_customized_settings, {}), customized_conf_file, self.encrypt_fields_customized)
+        # write globala and proxy settings
+        self._updateGlobalSettings(c.global_settings, all_settings,
+                                   all_origin_settings, conf_mgr)
         # write account credential settings
         for cred, conf_file in self.cred_confs:
-            cred_conf_file = get_or_create_conf_file(conf_mgr, conf_file)
             creds = all_settings.get(cred, {})
-            if creds == setup_const.ignore_backend_req:
+            if creds == c.ignore_backend_req:
                 logger.info("Ignore backend rest request")
                 continue
-            if creds:
-                self._updateConfStanzas(creds, cred_conf_file, self.encrypt_fields_credential)
-        logger.info("edit setup configure is done")
+            ta_conf_mgr = ta_conf.TAConfManager(
+                conf_file, scc.getMgmtUri(), self.getSessionKey(),
+                appname=self.appName)
+            ta_conf_mgr.set_encrypt_keys(self.encrypt_fields_credential)
+            self._updateCredentials(creds, ta_conf_mgr)
+        # write customized settings
+        customized_settings = all_settings.get(c.myta_customized_settings, {})
+        ta_conf_mgr = ta_conf.TAConfManager(
+            c.myta_customized_conf, scc.getMgmtUri(), self.getSessionKey(),
+            appname=self.appName)
+        ta_conf_mgr.set_encrypt_keys(self.encrypt_fields_customized)
+        self._updateCredentials(customized_settings, ta_conf_mgr)
+        conf_mgr.reload_conf(c.myta_conf)
+        conf_mgr.reload_conf(c.myta_credential_conf)
+        conf_mgr.reload_conf(c.myta_customized_conf)
+        logger.info("end edit")
 
     def _updateGlobalSettings(self, stanza, all_settings,
-                              all_origin_settings, conf_file):
+                              all_origin_settings, conf_mgr):
         if not self.stanza_map[stanza]:
             return
         global_settings = all_settings.get(stanza, {})
-        if self._configChanges(global_settings, all_origin_settings.get(stanza, {})):
-            logger.info("global setting stanza [%s] changed", stanza)
-            conf_file.update(stanza, global_settings, self.global_cred_fields)
+        if self._configChanges(global_settings, all_origin_settings[stanza]):
+            logger.info("%s stanza changed", stanza)
+            conf_mgr.update_properties(c.myta_conf, stanza, global_settings)
 
-    def _updateConfStanzas(self, all_settings, conf_file, encrypt_fields):
-        all_origin_settings = conf_file.get_all()
-        if not all_origin_settings:
-            all_origin_settings = {}
-        for stanza, settings in all_settings.iteritems():
-            conf_file.update(stanza, settings, encrypt_fields)
-        updated_stanzas = all_settings.keys()
-        to_be_deleted_stanzas = [ s for s in all_origin_settings if s not in updated_stanzas ]
-        for stanza in to_be_deleted_stanzas:
-            conf_file.delete(stanza)
+    def _updateCredentials(self, all_creds, ta_conf_mgr):
+        all_origin_creds = ta_conf_mgr.all(return_acl=False)
+        if all_origin_creds is None:
+            all_origin_creds = {}
+        for name, settings in all_creds.iteritems():
+            settings[c.name] = name
+            if name not in all_origin_creds:
+                logger.info("new %s stanza", name)
+                ta_conf_mgr.create(settings)
+            else:
+                settings[c.removed] = 0
+                if not self._configChanges(settings, all_origin_creds[name]):
+                    logger.debug("%s stanza is not changed", name)
+                    continue
+                logger.info("%s stanza changes", name)
+                ta_conf_mgr.update(settings)
+        stanzas = [k for k, v in all_origin_creds.iteritems()
+                   if k not in all_creds and utils.is_false(v.get(c.removed))]
+        for stanza in stanzas:
+            logger.info("Remove %s", stanza)
+            ta_conf_mgr.update({c.name: stanza, c.removed: "1"})
 
     @staticmethod
     def _clearPasswords(settings, cred_fields):
