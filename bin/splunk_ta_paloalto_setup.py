@@ -90,8 +90,8 @@ class ConfigApp(admin.MConfigHandler):
             self.callerArgs.data[c.all_settings][0])
         all_settings = json.loads(all_settings)
         # write globala and proxy settings
-        self._updateGlobalSettings(c.global_settings, all_settings,
-                                   all_origin_settings, conf_mgr)
+        # self._updateGlobalSettings(c.global_settings, all_settings,
+                                   # all_origin_settings, conf_mgr)
         # write account credential settings
         for cred, conf_file in self.cred_confs:
             creds = all_settings.get(cred, {})

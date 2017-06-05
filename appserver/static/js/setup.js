@@ -319,6 +319,16 @@ $(document).ready(function() {
         if (!tableData) {
             return
         }
+        tableLength = tableData.length;
+        // console.log("ROW COUNT: " + tableLength);
+        if(tableLength >= 1) {
+            $('#passwordBtnAdd').hide();
+        } else {
+            $('#passwordBtnAdd').show();
+        }
+        if(tableLength > 1) {
+            return
+        }
         var tbody = $("#" + tableId + " .tableBody");
         tbody.empty();
         tableData.forEach(function(row){
