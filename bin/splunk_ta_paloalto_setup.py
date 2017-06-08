@@ -74,10 +74,8 @@ class ConfigApp(admin.MConfigHandler):
         all_settings.update({c.myta_customized_settings: customized_settings})
         self._clearPasswords(all_settings, self.cred_fields)
         all_settings = json.dumps(all_settings)
-        logger.info("DUMP OF ALL SETTINGS");
         all_settings = utils.escape_json_control_chars(all_settings)
         confInfo[c.myta_settings].append(c.all_settings, all_settings)
-        logger.info(all_settings);
         logger.info("end list")
 
     def handleEdit(self, confInfo):
@@ -115,7 +113,6 @@ class ConfigApp(admin.MConfigHandler):
 
         ta_conf_mgr.set_encrypt_keys(self.encrypt_fields_customized)
         self._updateCredentials(customized_settings, ta_conf_mgr)
-        logger.info(ta_conf_mgr);
         conf_mgr.reload_conf(c.myta_conf)
         conf_mgr.reload_conf(c.myta_credential_conf)
         conf_mgr.reload_conf(c.myta_customized_conf)

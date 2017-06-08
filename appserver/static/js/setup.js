@@ -2,7 +2,7 @@ $(document).ready(function() {
     // 0) global vars
     // FIXME for the ebox_id, it will be different from TA to TA.
     var allSettingsEboxId = "#\\/Splunk_TA_paloalto_input_setup\\/Splunk_TA_paloalto_settings\\/Splunk_TA_paloalto_settings\\/all_settings_id";
-
+    var userDelete = [];
     var appname = Splunk.util.getCurrentApp();
     // 1) Load dependent css and javascript
     $("<link>").attr({
@@ -66,12 +66,6 @@ $(document).ready(function() {
 
     };
 
-    var allSettings = $(allSettingsEboxId).val();
-    allSettings = $.parseJSON(allSettings);
-    console.log(allSettings);
-    updateGlobalSettings(allSettings);
-
-
     var passwordColumns = [{
         id: "username",
         name: "Account Username",
@@ -95,12 +89,13 @@ $(document).ready(function() {
         var credsMap = {};
         if (credentialSettings) {
             for (var k in credentialSettings) {
+                console.log("K IS: " + k);
                 if (isTrue(credentialSettings[k].removed)) {
                     continue;
                 }
                 var rec = [k];
                 for (var i = 1; i < cols.length; i++) {
-                    var val = credentialSettings[k][cols[i].id]
+                    var val = credentialSettings[k];
                     if (val === undefined || val == null) {
                         val = "";
                     }
@@ -116,25 +111,77 @@ $(document).ready(function() {
         };
     };
 
-    var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
-
-    var tables = {
-        "passwordCredTable": {
-            "id": "passwordCredTable",
-            "columns": passwordColumns,
-            "data": passwordCreds.data,
-            "dataMap": passwordCreds.dataMap,
+    //Get SETTINGS using Splunk REST Endpoints
+    $.ajax({
+        url: "/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/",
+        data: {
+            "output_mode": "json"
         },
-    };
-
-    var dialogs = {
-        "passwordCredDialog": {
-            "id": "passwordCredDialog",
-            "btnId": "passwordBtnAdd",
-            "formId": "passwordCredForm",
-            "table": tables.passwordCredTable,
-        },
-    };
+        type: "GET",
+        dataType : "json",
+    }).done(function(response) {
+        var customized_settings = {}; 
+        var credential_settings = {}; 
+        for(var i = 0; i < response.entry.length; i++) {
+            var name = response.entry[i].name;
+            var array = name.split(":");
+            if(array[0] === "Splunk_TA_paloalto") {
+                if(array[1] === "autofocus_api_key" || array[1] === "wildfire_api_key") {
+                    var clearText = response.entry[i].content.clear_password;
+                    clearText = clearText.replace('password``splunk_cred_sep``','');
+                    customized_settings[array[1]] = clearText;
+                } else {
+                    var clearText = response.entry[i].content.clear_password;
+                    clearText = clearText.replace('password``splunk_cred_sep``','');
+                    credential_settings[array[1]] = clearText;
+                }
+            }
+        }
+        var allSettings = {customized_settings, credential_settings};
+        // console.log(allSettings);
+        //parse the data
+        // updateGlobalSettings(allSettings);
+        updateCustomizedSettings(allSettings);
+        var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
+        tables = {
+            "passwordCredTable": {
+                "id": "passwordCredTable",
+                "columns": passwordColumns,
+                "data": passwordCreds.data,
+                "dataMap": passwordCreds.dataMap,
+            },
+        };
+        dialogs = {
+            "passwordCredDialog": {
+                "id": "passwordCredDialog",
+                "btnId": "passwordBtnAdd",
+                "formId": "passwordCredForm",
+                "table": tables.passwordCredTable,
+            },
+        };
+        for (var dialogId in dialogs) {
+            enjectDialogForm(dialogId, dialogs[dialogId].formId, dialogs[dialogId].table.columns);
+            registerBtnClickHandler(dialogId);
+        }
+        for (var tableId in tables) {
+            updateHeaders(tableId, tables[tableId].columns);
+            hideColumns(tableId, tables[tableId].columns);
+            updateTable(tableId, tables[tableId].data, tables[tableId].columns); }
+        for (var dialogId in dialogs) {
+            $("#" + dialogs[dialogId].formId).submit(submitHandler);
+            $("#" + dialogs[dialogId].formId + " input").off("keypress").keypress(dialogId, function(e) {
+                if (e.which == 13) {
+                    $("#" + e.data + "BtnSave").click();
+                    return false;
+                }
+            });
+        }
+    }).fail(function(xhr, status, response) {
+        $('#load_err_banner').show();
+        $('#save_err_banner').hide();
+        $('#info_banner').hide();
+        console.log(status, response);
+    });
 
     function showDialog(dialogId){
         $("." + dialogId).css("display", "block");
@@ -196,11 +243,6 @@ $(document).ready(function() {
             showDialog(did);
         });
     };
-
-    for (var dialogId in dialogs) {
-        enjectDialogForm(dialogId, dialogs[dialogId].formId, dialogs[dialogId].table.columns);
-        registerBtnClickHandler(dialogId);
-    }
 
     function clearFlag(){
         $("table thead td span").each(function(){
@@ -310,6 +352,7 @@ $(document).ready(function() {
         for (var i = 0; i < table.data.length; i++) {
             if (table.data[i][0] == rowIdAndTableId[0]) {
                 table.data.splice(i, 1);
+                userDelete.push(rowIdAndTableId[0]);
                 delete table.dataMap[rowIdAndTableId[0]];
                 break;
             }
@@ -358,11 +401,11 @@ $(document).ready(function() {
         hideColumns(tableId, cols);
     };
 
-    for (var tableId in tables) {
-        updateHeaders(tableId, tables[tableId].columns);
-        hideColumns(tableId, tables[tableId].columns);
-        updateTable(tableId, tables[tableId].data, tables[tableId].columns);
-    }
+    // for (var tableId in tables) {
+    //     updateHeaders(tableId, tables[tableId].columns);
+    //     hideColumns(tableId, tables[tableId].columns);
+    //     updateTable(tableId, tables[tableId].data, tables[tableId].columns);
+    // }
 
 
     function updateCustomizedSettings(settings) {
@@ -370,14 +413,14 @@ $(document).ready(function() {
             return;
         }
         if (settings.customized_settings["wildfire_api_key"]){
-            $("#wildfire_api_key_id").val(settings["customized_settings"]["wildfire_api_key"]["content"]);
+            $("#wildfire_api_key_id").val(settings["customized_settings"]["wildfire_api_key"]);
         }
         if (settings.customized_settings["autofocus_api_key"]){
-            $("#autofocus_api_key_id").val(settings["customized_settings"]["autofocus_api_key"]["content"]);
+            $("#autofocus_api_key_id").val(settings["customized_settings"]["autofocus_api_key"]);
         }
     };
 
-    updateCustomizedSettings(allSettings);
+    // updateCustomizedSettings(allSettings);
 
     function getJSONResult() {
         var result = {};
@@ -428,9 +471,15 @@ $(document).ready(function() {
         $(".my-btn-primary span").html($(".splButton-primary span").html());
     }, 50);
     $(".splButton-primary").on("click", function(){
-        console.log('SAVING!');
+        if(userDelete.length > 0) {
+           $.ajax({
+                url:"/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/Splunk_TA_paloalto%3A" + userDelete + "%3A",
+                type: "DELETE",
+            }).success(function() {
+                console.log('User' + userDelete + 'deleted.')
+            });
+        }
         var jsonResult = JSON.stringify(getJSONResult());
-        console.log(jsonResult);
         $(allSettingsEboxId).val(jsonResult);
     });
 })
