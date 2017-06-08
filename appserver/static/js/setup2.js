@@ -1,21 +1,49 @@
 $(document).ready(function() {
+
     // 0) global vars
     // FIXME for the ebox_id, it will be different from TA to TA.
     var allSettingsEboxId = "#\\/Splunk_TA_paloalto_input_setup\\/Splunk_TA_paloalto_settings\\/Splunk_TA_paloalto_settings\\/all_settings_id";
 
+    function return_status_banner() {
+        return '<div id="info_banner" class="info">Successfully updated configuration for add-on "Splunk_TA_paloalto". </div>' +
+        '<div id="save_err_banner" class="error">Fail to update configuration for add-on "Splunk_TA_paloalto". </div>' +
+        '<div id="load_err_banner" class="error">Fail to load configuration for add-on "Splunk_TA_paloalto". </div>';
+    }
+
+    // begin to process the doc
     var appname = Splunk.util.getCurrentApp();
-    // 1) Load dependent css and javascript
-    $("<link>").attr({
-        rel: "stylesheet",
-        type: "text/css",
-        href: "/en-US/static/app/" + appname + "/css/setup.css",
-    }).appendTo("head");
-    // 2) Append new html
+    // load css
+    var cssLinks = [ '/en-US/static/app/' + appname + '/css/setup.css'];
+    for(var i = 0; i < cssLinks.length; i++) {
+        $("<link>").attr({
+            rel: "stylesheet",
+            type: "text/css",
+            href: cssLinks[i],
+        }).appendTo("head");
+    }
+
+    // remove bootstrap-enterprise.css
+    $("head").find("link[type='text/css']").each(function(idx) {
+        var ele = $(this);
+        if (ele.attr('href').indexOf("css/bootstrap-enterprise.css") > 0) {
+            ele.remove();
+        }
+    });
+    // generate the html
+
+
+     // 2) Append new html
     var originFormWrapper = $(".entityEditForm");
     originFormWrapper.css("display", "none");
     originFormWrapper.before(return_page());
+    $("body").prepend(return_status_banner());
+    $('#info_banner').hide();
+    $('#save_err_banner').hide();
+    $('.messaging').hide();
+    $('#load_err_banner').hide();
 
     var currentAction = "New";
+    var userDelete = [];
 
     function htmlEscape(str) {
         return String(str)
@@ -66,24 +94,18 @@ $(document).ready(function() {
 
     };
 
-    var allSettings = $(allSettingsEboxId).val();
-    allSettings = $.parseJSON(allSettings);
-    console.log(allSettings);
-    updateGlobalSettings(allSettings);
-
-
     var passwordColumns = [{
         id: "username",
-        name: "Account Username",
-        name_with_desc: "The username of the user account*",
+        name: "Username",
+        name_with_desc: "Account Username*",
         required: "required",
         hide: false,
         type: 'text',
         dialogHide: false,
     }, {
         id: "password",
-        name: "Account Password",
-        name_with_desc: "The password of the user account*",
+        name: "Password",
+        name_with_desc: "Account Password*",
         required: "required",
         hide: true,
         type: 'password',
@@ -116,25 +138,8 @@ $(document).ready(function() {
         };
     };
 
-    var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
-
-    var tables = {
-        "passwordCredTable": {
-            "id": "passwordCredTable",
-            "columns": passwordColumns,
-            "data": passwordCreds.data,
-            "dataMap": passwordCreds.dataMap,
-        },
-    };
-
-    var dialogs = {
-        "passwordCredDialog": {
-            "id": "passwordCredDialog",
-            "btnId": "passwordBtnAdd",
-            "formId": "passwordCredForm",
-            "table": tables.passwordCredTable,
-        },
-    };
+    var tables = {};
+    var dialogs = {};
 
     function showDialog(dialogId){
         $("." + dialogId).css("display", "block");
@@ -197,11 +202,6 @@ $(document).ready(function() {
         });
     };
 
-    for (var dialogId in dialogs) {
-        enjectDialogForm(dialogId, dialogs[dialogId].formId, dialogs[dialogId].table.columns);
-        registerBtnClickHandler(dialogId);
-    }
-
     function clearFlag(){
         $("table thead td span").each(function(){
             $(this).removeClass("asque");
@@ -211,7 +211,6 @@ $(document).ready(function() {
 
     function submitForm(formId) {
         var formIdToDialog = {
-
             "passwordCredForm": dialogs.passwordCredDialog,
         }
         var dialog = formIdToDialog[formId];
@@ -237,30 +236,20 @@ $(document).ready(function() {
         } else {
             dialog.table.data.push(row);
         }
-
         dialog.table.dataMap[row[0]] = row;
+        console.log("entry: " + dialog.table.dataMap[row[0]]);
         updateTable(dialog.table.id, dialog.table.data, dialog.table.columns);
         hideDialog(dialog.id);
+        // $('#passwordBtnAdd').hide();
         clearFlag();
     }
 
     function submitHandler(event) {
+        event.preventDefault();
+        event.stopPropagation();
         var formId = event.target.id;
         submitForm(formId);
-        event.preventDefault();
     }
-
-    setTimeout(function() {
-        for (var dialogId in dialogs) {
-            $("#" + dialogs[dialogId].formId).submit(submitHandler);
-            $("#" + dialogs[dialogId].formId + " input").off("keypress").keypress(dialogId, function(e) {
-                if (e.which == 13) {
-                    $("#" + e.data + "BtnSave").click();
-                    return false;
-                }
-            });
-        }
-    }, 3000);
 
     function hideColumns(tableId, cols) {
         for (var i = 0; i < cols.length; i++) {
@@ -306,24 +295,24 @@ $(document).ready(function() {
 
     function deleteRow(e) {
         var rowIdAndTableId = e.target.id.split("``");
+        // console.log('deleterow' + rowIdAndTableId);
         var table = tables[rowIdAndTableId[1]];
         for (var i = 0; i < table.data.length; i++) {
             if (table.data[i][0] == rowIdAndTableId[0]) {
                 table.data.splice(i, 1);
+                userDelete.push(rowIdAndTableId[0]);
                 delete table.dataMap[rowIdAndTableId[0]];
                 break;
             }
         }
+        // console.log('deleteRow2 ' + userDelete);
         updateTable(table.id, table.data, table.columns);
         return false;
     };
 
     function updateTable(tableId, tableData, cols){
-        if (!tableData) {
-            return
-        }
         tableLength = tableData.length;
-        // console.log("ROW COUNT: " + tableLength);
+        console.log("ROW COUNT: " + tableLength);
         if(tableLength >= 1) {
             $('#passwordBtnAdd').hide();
         } else {
@@ -358,26 +347,26 @@ $(document).ready(function() {
         hideColumns(tableId, cols);
     };
 
-    for (var tableId in tables) {
-        updateHeaders(tableId, tables[tableId].columns);
-        hideColumns(tableId, tables[tableId].columns);
-        updateTable(tableId, tables[tableId].data, tables[tableId].columns);
-    }
-
 
     function updateCustomizedSettings(settings) {
-        if (settings.customized_settings === undefined) {
+        if (settings.customized_settings.wildfire_api_key === undefined || settings.customized_settings.autofocus_api_key === undefined) {
             return;
         }
-        if (settings.customized_settings["wildfire_api_key"]){
-            $("#wildfire_api_key_id").val(settings["customized_settings"]["wildfire_api_key"]["content"]);
+        if (settings.customized_settings["autofocus_api_key"]["password"] != ''){
+            $("#autofocus_api_key_id").val(settings["customized_settings"]["autofocus_api_key"]["password"]);
         }
-        if (settings.customized_settings["autofocus_api_key"]){
-            $("#autofocus_api_key_id").val(settings["customized_settings"]["autofocus_api_key"]["content"]);
+        if (settings.customized_settings["wildfire_api_key"]["password"] != ''){
+            $("#wildfire_api_key_id").val(settings["customized_settings"]["wildfire_api_key"]["password"]);
         }
     };
+    // Adding this feature to prevent overwriting api keys.
+    function disableInput(input) {
+        console.log('lets disbale input');
+        $("#wildfire_api_key_id").hide();
+    }
+    function enableInput(input) {
 
-    updateCustomizedSettings(allSettings);
+    }
 
     function getJSONResult() {
         var result = {};
@@ -387,11 +376,17 @@ $(document).ready(function() {
             "log_level": log_level,
         }
 
+        // if (userDelete.length > 0) {
+        //     result["delete_settings"] = {
+        //         "credentials": userDelete,
+        //     }
+        // }
 
         // Credential Settings
         var credSettings = {
             "credential_settings": tables.passwordCredTable,
         }
+
         for (var k in credSettings) {
             result[k] = {};
             var credTable = credSettings[k];
@@ -403,34 +398,226 @@ $(document).ready(function() {
                 result[k][temp[credTable.columns[0].id]] = temp;
                 delete temp[credTable.columns[0].id];
             }
+            console.log('getJSONResult ' + JSON.stringify(result[k]));
         }
 
         // Customized Settings
         var check_dict = {true:1, false:0}
         var user_defined_settings = {
-            "wildfire_api_key": {
-                "password": $("#wildfire_api_key_id").val()
-            },
             "autofocus_api_key": {
+                "type": "password",
                 "password": $("#autofocus_api_key_id").val()
+            },
+            "wildfire_api_key": {
+                "type": "password",
+                "password": $("#wildfire_api_key_id").val()
             },
         }
         result["customized_settings"] = user_defined_settings;
         return result;
-    }
-    $(".my-btn-primary").click(function(){
-        $(".splButton-primary").click();
+    };
+
+    function appConfigured() {
+        $.ajax({
+            url: "/en-US/splunkd/__raw/services/apps/local/Splunk_TA_paloalto",
+            type: "POST",
+            data: {
+                "configured": true
+            }
+        }).done(function() {
+            console.log('set configured as true!');
+        }).fail(function() {
+            console.log('fail to set configured as true!')
+        })
+    };
+
+    var saving = false;
+    $(".my-btn-primary span").html("Save");
+    function saveSettings() {
+        var jsonResult = JSON.stringify(getJSONResult());
+        $.ajax({
+            url:"/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/Splunk_TA_paloalto_input_setup/Splunk_TA_paloalto_settings/Splunk_TA_paloalto_settings",
+            type: "POST",
+            data: {
+                "all_settings": JSON.stringify(getJSONResult())
+            }
+        }).done(function() {
+            $('#load_err_banner').hide();
+            $('#save_err_banner').hide();
+            $('#info_banner').show();
+            appConfigured();
+        }).fail(function() {
+            $('#load_err_banner').hide();
+            $('#save_err_banner').show();
+            $('#info_banner').hide();
+        }).always(function() {
+            saving = false;
+            $(".my-btn-primary span").html("Save");
+        });
+
+        //Lets handle deleting user
+        if(userDelete.length > 0) {
+           console.log('saveSettings2: User is marked to be deleted');
+           $.ajax({
+                url:"/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/Splunk_TA_paloalto%3A" + userDelete + "%3A",
+                type: "DELETE",
+            }).success(function() {
+                console.log('saveSettings3: User' + userDelete + 'deleted.')
+            });
+        }
+    };
+
+    $(".my-btn-primary").click(function(e){
+        e.preventDefault();
+        if (saving) {
+            return;
+        }
+        saving = true;
+        $(".my-btn-primary span").html("Saving");
+        saveSettings();
     });
     $(".my-btn-secondary").click(function(){
-        window.location = "../../../../search/apps/local";
+        window.location = "../../manager/launcher/apps/local";
     });
-    setInterval(function(){
-        $(".my-btn-primary span").html($(".splButton-primary span").html());
-    }, 50);
-    $(".splButton-primary").on("click", function(){
-        console.log('SAVING!');
-        var jsonResult = JSON.stringify(getJSONResult());
-        console.log(jsonResult);
-        $(allSettingsEboxId).val(jsonResult);
+
+    // TODO: use ajax to load the settings and render the page
+    // We have to get API keys independently
+
+    // https://localhost:8089/servicesNS/nobody/Splunk_TA_paloalto/storage/passwords/Splunk_TA_paloalto:autofocus_api_key
+
+    //Get Wildfire API key
+    $.ajax({
+        url: "/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/",
+        data: {
+            "output_mode": "json"
+        },
+        type: "GET",
+        dataType : "json",
+    }).done(function(response) {
+        console.log("responses: " + response.entry);
+        var customized_settings = {}; 
+        var credential_settings = {}; 
+        for(var i = 0; i < response.entry.length; i++) {
+            var name = response.entry[i].name;
+            console.log(name);
+            var array = name.split(":");
+            if(array[0] == "Splunk_TA_paloalto") {
+                if( array[1] == "autofocus_api_key" || array[1] == "wildfire_api_key") {
+                    var keyName = array[1];
+                    console.log('here i am');
+                    console.log(keyName);
+                    customized_settings.push({keyName: $.parseJSON(response.entry[i].content.clear_password)});
+                } else {
+                    credential_settings[array[1]] = $.parseJSON(response.entry[i].content.clear_password);
+                    console.log('else i am');
+                }
+            }
+        }
+        var allSettings = {customized_settings, credential_settings};
+        console.log(allSettings);
+        //parse the data
+        // updateGlobalSettings(allSettings);
+        updateCustomizedSettings(allSettings);
+        var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
+        tables = {
+            "passwordCredTable": {
+                "id": "passwordCredTable",
+                "columns": passwordColumns,
+                "data": passwordCreds.data,
+                "dataMap": passwordCreds.dataMap,
+            },
+        };
+        dialogs = {
+            "passwordCredDialog": {
+                "id": "passwordCredDialog",
+                "btnId": "passwordBtnAdd",
+                "formId": "passwordCredForm",
+                "table": tables.passwordCredTable,
+            },
+        };
+        for (var dialogId in dialogs) {
+            enjectDialogForm(dialogId, dialogs[dialogId].formId, dialogs[dialogId].table.columns);
+            registerBtnClickHandler(dialogId);
+        }
+        for (var tableId in tables) {
+            updateHeaders(tableId, tables[tableId].columns);
+            hideColumns(tableId, tables[tableId].columns);
+            updateTable(tableId, tables[tableId].data, tables[tableId].columns);
+        }
+        for (var dialogId in dialogs) {
+            $("#" + dialogs[dialogId].formId).submit(submitHandler);
+            $("#" + dialogs[dialogId].formId + " input").off("keypress").keypress(dialogId, function(e) {
+                if (e.which == 13) {
+                    $("#" + e.data + "BtnSave").click();
+                    return false;
+                }
+            });
+        }
+    }).fail(function(xhr, status, response) {
+        $('#load_err_banner').show();
+        $('#save_err_banner').hide();
+        $('#info_banner').hide();
+        console.log(status, response);
     });
+
+
+    //THIS AJAX call has bugs Need to wait for Splunk to fix the endpoint.
+    // $.ajax({
+    //     url: "/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/Splunk_TA_paloalto_input_setup/Splunk_TA_paloalto_settings/Splunk_TA_paloalto_settings",
+    //     data: {
+    //         "output_mode": "json"
+    //     },
+    //     type: "GET",
+    //     dataType : "json",
+    // }).done(function(response) {
+    //     var allSettings = null;
+    //     if (response.entry && response.entry.length > 0) {
+    //         allSettings = $.parseJSON(response.entry[0].content.all_settings);
+    //     }
+    //     console.log(allSettings);
+    //     //parse the data
+    //     // updateGlobalSettings(allSettings);
+    //     updateCustomizedSettings(allSettings);
+    //     var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
+    //     tables = {
+    //         "passwordCredTable": {
+    //             "id": "passwordCredTable",
+    //             "columns": passwordColumns,
+    //             "data": passwordCreds.data,
+    //             "dataMap": passwordCreds.dataMap,
+    //         },
+    //     };
+    //     dialogs = {
+    //         "passwordCredDialog": {
+    //             "id": "passwordCredDialog",
+    //             "btnId": "passwordBtnAdd",
+    //             "formId": "passwordCredForm",
+    //             "table": tables.passwordCredTable,
+    //         },
+    //     };
+    //     for (var dialogId in dialogs) {
+    //         enjectDialogForm(dialogId, dialogs[dialogId].formId, dialogs[dialogId].table.columns);
+    //         registerBtnClickHandler(dialogId);
+    //     }
+    //     for (var tableId in tables) {
+    //         updateHeaders(tableId, tables[tableId].columns);
+    //         hideColumns(tableId, tables[tableId].columns);
+    //         updateTable(tableId, tables[tableId].data, tables[tableId].columns);
+    //     }
+    //     for (var dialogId in dialogs) {
+    //         $("#" + dialogs[dialogId].formId).submit(submitHandler);
+    //         $("#" + dialogs[dialogId].formId + " input").off("keypress").keypress(dialogId, function(e) {
+    //             if (e.which == 13) {
+    //                 $("#" + e.data + "BtnSave").click();
+    //                 return false;
+    //             }
+    //         });
+    //     }
+    // }).fail(function(xhr, status, response) {
+    //     $('#load_err_banner').show();
+    //     $('#save_err_banner').hide();
+    //     $('#info_banner').hide();
+    //     console.log(status, response);
+    // });
+
 })

@@ -28,7 +28,7 @@ class ConfigApp(admin.MConfigHandler):
     valid_args = ("all_settings",)
 
     stanza_map = {
-        c.global_settings: True,
+        c.global_settings: False,
         c.myta_credential_settings: True,
         c.myta_customized_settings: True,
     }
@@ -74,8 +74,10 @@ class ConfigApp(admin.MConfigHandler):
         all_settings.update({c.myta_customized_settings: customized_settings})
         self._clearPasswords(all_settings, self.cred_fields)
         all_settings = json.dumps(all_settings)
+        logger.info("DUMP OF ALL SETTINGS");
         all_settings = utils.escape_json_control_chars(all_settings)
         confInfo[c.myta_settings].append(c.all_settings, all_settings)
+        logger.info(all_settings);
         logger.info("end list")
 
     def handleEdit(self, confInfo):
@@ -90,8 +92,8 @@ class ConfigApp(admin.MConfigHandler):
             self.callerArgs.data[c.all_settings][0])
         all_settings = json.loads(all_settings)
         # write globala and proxy settings
-        # self._updateGlobalSettings(c.global_settings, all_settings,
-                                   # all_origin_settings, conf_mgr)
+        self._updateGlobalSettings(c.global_settings, all_settings,
+                                   all_origin_settings, conf_mgr)
         # write account credential settings
         for cred, conf_file in self.cred_confs:
             creds = all_settings.get(cred, {})
@@ -101,15 +103,19 @@ class ConfigApp(admin.MConfigHandler):
             ta_conf_mgr = ta_conf.TAConfManager(
                 conf_file, scc.getMgmtUri(), self.getSessionKey(),
                 appname=self.appName)
+
             ta_conf_mgr.set_encrypt_keys(self.encrypt_fields_credential)
             self._updateCredentials(creds, ta_conf_mgr)
+
         # write customized settings
         customized_settings = all_settings.get(c.myta_customized_settings, {})
         ta_conf_mgr = ta_conf.TAConfManager(
             c.myta_customized_conf, scc.getMgmtUri(), self.getSessionKey(),
             appname=self.appName)
+
         ta_conf_mgr.set_encrypt_keys(self.encrypt_fields_customized)
         self._updateCredentials(customized_settings, ta_conf_mgr)
+        logger.info(ta_conf_mgr);
         conf_mgr.reload_conf(c.myta_conf)
         conf_mgr.reload_conf(c.myta_credential_conf)
         conf_mgr.reload_conf(c.myta_customized_conf)
