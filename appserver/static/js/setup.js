@@ -89,7 +89,6 @@ $(document).ready(function() {
         var credsMap = {};
         if (credentialSettings) {
             for (var k in credentialSettings) {
-                console.log("K IS: " + k);
                 if (isTrue(credentialSettings[k].removed)) {
                     continue;
                 }
