@@ -68,7 +68,7 @@ $(document).ready(function() {
 
     var passwordColumns = [{
         id: "username",
-        name: "Account Username",
+        name: "Username",
         name_with_desc: "The username of the user account*",
         required: "required",
         hide: false,
@@ -451,9 +451,11 @@ $(document).ready(function() {
         var check_dict = {true:1, false:0}
         var user_defined_settings = {
             "wildfire_api_key": {
+                "type": "password",
                 "password": $("#wildfire_api_key_id").val()
             },
             "autofocus_api_key": {
+                "type": "password",
                 "password": $("#autofocus_api_key_id").val()
             },
         }

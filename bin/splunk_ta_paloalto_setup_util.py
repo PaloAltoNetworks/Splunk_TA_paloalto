@@ -5,9 +5,13 @@ import os
 import splunk.clilib.cli_common as scc
 import splunk.admin as admin
 
+# import splunktalib.common.util as utils
+# from splunktalib.conf_manager import conf_manager as conf
+
 import solnlib.utils as utils
 import solnlib.conf_manager as conf
 import splunk_ta_paloalto_consts as setup_const
+import splunktalib.common.log as log
 
 
 '''
@@ -238,6 +242,7 @@ class Setup_Util(object):
     def get_customized_setting(self, key):
         customized_settings = self._parse_conf().get(
             setup_const.myta_customized_settings, None)
+
         if not customized_settings:
             self.log_info("Customized setting is not set")
             return None

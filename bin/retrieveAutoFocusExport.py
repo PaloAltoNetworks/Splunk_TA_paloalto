@@ -50,7 +50,7 @@ def collect_events(helper, inputs, ew):
     # Get API KEY
     # helper.log_debug("Getting Autofocus APIKey from encrypted store")
     af_apikey = helper.get_global_setting("autofocus_api_key")
-    # helper.log_debug("AFAPIKEY: " + af_apikey)
+    # helper.log_debug(af_apikey)
 
     opt_labels = helper.get_arg('label')
     if hasattr(opt_labels, 'lower'):

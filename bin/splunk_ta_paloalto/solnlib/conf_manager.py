@@ -19,7 +19,8 @@ automatically.
 '''
 
 import json
-import logging
+import splunktalib.common.log as log
+
 import traceback
 
 from splunklib import binding
@@ -28,6 +29,9 @@ from solnlib.utils import retry
 from solnlib.credentials import CredentialNotExistException
 from solnlib.credentials import CredentialManager
 import solnlib.splunk_rest_client as rest_client
+
+
+logger = log.Logs().get_logger("splunk_ta_paloalto_conf_manager")
 
 __all__ = ['ConfStanzaNotExistException',
            'ConfFile',
@@ -117,9 +121,9 @@ class ConfFile(object):
     def _decrypt_stanza(self, stanza_name, encrypted_stanza):
         encrypted_keys = [key for key in encrypted_stanza if
                           encrypted_stanza[key] == self.ENCRYPTED_TOKEN]
+        encrypted_fields = {}
         if encrypted_keys:
-            encrypted_fields = json.loads(
-                self._cred_mgr.get_password(stanza_name))
+            encrypted_fields['password'] = self._cred_mgr.get_password(stanza_name).replace("password``splunk_cred_sep``", "")
             for key in encrypted_keys:
                 encrypted_stanza[key] = encrypted_fields[key]
 
@@ -180,7 +184,6 @@ class ConfFile(object):
            >>> conf = cfm.get_conf('test')
            >>> conf.get('test_stanza')
         '''
-
         try:
             stanza_mgr = self._conf.list(name=stanza_name)[0]
         except binding.HTTPError as e:
@@ -197,7 +200,6 @@ class ConfFile(object):
 
     @retry(exceptions=[binding.HTTPError])
     def get_all(self):
-        logging.info("GETTING ALL")
         '''Get all stanzas from configuration file.
 
         :returns: All stanzas, like: {'test': {
@@ -218,7 +220,6 @@ class ConfFile(object):
         '''
 
         stanza_mgrs = self._conf.list()
-        logging.info(stanza_mgrs)
         return {stanza_mgr.name: self._decrypt_stanza(
             stanza_mgr.name, stanza_mgr.content) for stanza_mgr in stanza_mgrs}
 
@@ -288,7 +289,7 @@ class ConfFile(object):
         try:
             self._conf.delete(stanza_name)
         except KeyError as e:
-            logging.error('Delete stanza: %s error: %s.',
+            logger.error('Delete stanza: %s error: %s.',
                           stanza_name, traceback.format_exc(e))
             raise ConfStanzaNotExistException(
                 'Stanza: %s does not exist in %s.conf' %
