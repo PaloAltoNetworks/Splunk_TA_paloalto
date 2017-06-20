@@ -5,8 +5,8 @@ import os
 import splunk.clilib.cli_common as scc
 import splunk.admin as admin
 
-import splunktalib.common.util as utils
-import splunktalib.conf_manager as conf
+import solnlib.utils as utils
+import solnlib.conf_manager as conf
 import splunk_ta_paloalto_consts as setup_const
 
 

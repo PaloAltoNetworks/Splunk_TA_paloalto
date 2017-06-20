@@ -197,6 +197,7 @@ class ConfFile(object):
 
     @retry(exceptions=[binding.HTTPError])
     def get_all(self):
+        logging.info("GETTING ALL")
         '''Get all stanzas from configuration file.
 
         :returns: All stanzas, like: {'test': {
@@ -217,6 +218,7 @@ class ConfFile(object):
         '''
 
         stanza_mgrs = self._conf.list()
+        logging.info(stanza_mgrs)
         return {stanza_mgr.name: self._decrypt_stanza(
             stanza_mgr.name, stanza_mgr.content) for stanza_mgr in stanza_mgrs}
 
