@@ -263,11 +263,11 @@ $(document).ready(function() {
         dialog.table.columns.forEach(function(c, i){
             row[i] = $("#" + c.id).val();
         });
-        if (row[0] in dialog.table.dataMap && currentAction == "New") {
-            label.text(dialog.table.columns[0].name + ": " + row[0] + " already exists");
-            label.css("color", "red");
-            return;
-        }
+        // if (row[0] in dialog.table.dataMap && currentAction == "New") {
+        //     label.text(dialog.table.columns[0].name + ": " + row[0] + " already exists");
+        //     label.css("color", "red");
+        //     return;
+        // }
         if (currentAction == "Edit") {
             for (var i = 0; i < dialog.table.data.length; i++) {
                 if (dialog.table.data[i][0] == row[0]) {
