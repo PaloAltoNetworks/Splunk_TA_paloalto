@@ -1,14 +1,16 @@
 $(document).ready(function() {
+    'user strict';
     // 0) global vars
     // FIXME for the ebox_id, it will be different from TA to TA.
     var allSettingsEboxId = "#\\/Splunk_TA_paloalto_input_setup\\/Splunk_TA_paloalto_settings\\/Splunk_TA_paloalto_settings\\/all_settings_id";
     var userDelete = [];
+    var userEdit = 0;
     var appname = Splunk.util.getCurrentApp();
     // 1) Load dependent css and javascript
     $("<link>").attr({
         rel: "stylesheet",
         type: "text/css",
-        href: "/en-US/static/app/" + appname + "/css/setup.css",
+        href: "/en-US/static/app/" + appname + "/css/setup.css"
     }).appendTo("head");
     // 2) Append new html
     var originFormWrapper = $(".entityEditForm");
@@ -54,7 +56,7 @@ $(document).ready(function() {
         } else {
             $("#" + boxId).prop("checked", false);
         }
-    };
+    }
 
 
     function updateGlobalSettings(settings) {
@@ -62,9 +64,8 @@ $(document).ready(function() {
         if (settings.global_settings === undefined) {
             return;
         }
-        $("#log_level_id").val(settings["global_settings"]["log_level"]);
-
-    };
+        $("#log_level_id").val(settings.global_settings.log_level);
+    }
 
     var passwordColumns = [{
         id: "username",
@@ -73,7 +74,7 @@ $(document).ready(function() {
         required: "required",
         hide: false,
         type: 'text',
-        dialogHide: false,
+        dialogHide: false
     }, {
         id: "password",
         name: "Account Password",
@@ -81,7 +82,7 @@ $(document).ready(function() {
         required: "required",
         hide: true,
         type: 'password',
-        dialogHide: false,
+        dialogHide: false
     }];
 
     function updateCredentialSettings(cols, credentialSettings) {
@@ -119,8 +120,8 @@ $(document).ready(function() {
         type: "GET",
         dataType : "json",
     }).done(function(response) {
-        var customized_settings = {}; 
-        var credential_settings = {}; 
+        var customized_settings = {};
+        var credential_settings = {};
         for(var i = 0; i < response.entry.length; i++) {
             var name = response.entry[i].name;
             var array = name.split(":");
@@ -138,7 +139,7 @@ $(document).ready(function() {
         }
         var allSettings = {customized_settings, credential_settings};
         // console.log(allSettings);
-        //parse the data
+        // parse the data
         // updateGlobalSettings(allSettings);
         updateCustomizedSettings(allSettings);
         var passwordCreds = updateCredentialSettings(passwordColumns, allSettings.credential_settings);
@@ -179,7 +180,7 @@ $(document).ready(function() {
         $('#load_err_banner').show();
         $('#save_err_banner').hide();
         $('#info_banner').hide();
-        console.log(status, response);
+        // console.log(status, response);
     });
 
     function showDialog(dialogId){
@@ -324,6 +325,7 @@ $(document).ready(function() {
 
     function editRow(e) {
         currentAction = "Edit";
+        userEdit = 1;
         var rowIdAndTableId = e.target.id.split("``");
         var table = tables[rowIdAndTableId[1]];
         var credName = $("input#" + table.columns[0].id);
@@ -406,7 +408,6 @@ $(document).ready(function() {
     //     updateTable(tableId, tables[tableId].data, tables[tableId].columns);
     // }
 
-
     function updateCustomizedSettings(settings) {
         if (settings.customized_settings === undefined) {
             return;
@@ -421,6 +422,23 @@ $(document).ready(function() {
 
     // updateCustomizedSettings(allSettings);
 
+    // Function to remove Firewall Api Key
+    function removeFirewallAPIKey() {
+        console.log("USer Edit/Delete called.");
+        $.ajax({
+            url:"/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/%3Afirewall_api_key%3A",
+            type: "DELETE"
+        }).success(function() {
+            console.log("Firewall API Key Deleted.");
+            userEdit = 0;
+            return;
+        }).error(function() {
+            console.log("Error");
+            userEdit = 0;
+            return;
+        });
+    }
+
     function getJSONResult() {
         var result = {};
         // Global Settings
@@ -428,7 +446,6 @@ $(document).ready(function() {
         result["global_settings"] = {
             "log_level": log_level,
         }
-
 
         // Credential Settings
         var credSettings = {
@@ -462,6 +479,7 @@ $(document).ready(function() {
         result["customized_settings"] = user_defined_settings;
         return result;
     }
+
     $(".my-btn-primary").click(function(){
         $(".splButton-primary").click();
     });
@@ -473,12 +491,23 @@ $(document).ready(function() {
     }, 50);
     $(".splButton-primary").on("click", function(){
         if(userDelete.length > 0) {
-           $.ajax({
-                url:"/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/Splunk_TA_paloalto%3A" + userDelete + "%3A",
-                type: "DELETE",
-            }).success(function() {
-                console.log('User' + userDelete + 'deleted.')
-            });
+           for (var i = 0; i < userDelete.length; i++) {
+               $.ajax({
+                    url:"/en-US/splunkd/__raw/servicesNS/-/Splunk_TA_paloalto/storage/passwords/Splunk_TA_paloalto%3A" + userDelete[i] + "%3A",
+                    type: "DELETE",
+                }).success(function() {
+                    console.log(userDelete);
+                    console.log('User ' + userDelete[i] + ' deleted.');
+                    userDelete.splice(0, 1);
+                    console.log(userDelete);
+                }).error(function() {
+                    console.log('User ' + userDelete[i] + ' Not Found.');
+                });
+            }
+        }
+        console.log(userEdit);
+        if(userEdit == 1 || userDelete.length > 0) {
+           removeFirewallAPIKey();
         }
         var jsonResult = JSON.stringify(getJSONResult());
         $(allSettingsEboxId).val(jsonResult);
