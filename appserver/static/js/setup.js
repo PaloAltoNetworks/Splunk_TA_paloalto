@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    'user strict';
+    'use strict';
     // 0) global vars
     // FIXME for the ebox_id, it will be different from TA to TA.
     var allSettingsEboxId = "#\\/Splunk_TA_paloalto_input_setup\\/Splunk_TA_paloalto_settings\\/Splunk_TA_paloalto_settings\\/all_settings_id";
