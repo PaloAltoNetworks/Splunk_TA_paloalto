@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    'use strict';
+    "use strict";
     // 0) global vars
     // FIXME for the ebox_id, it will be different from TA to TA.
     var allSettingsEboxId = "#\\/Splunk_TA_paloalto_input_setup\\/Splunk_TA_paloalto_settings\\/Splunk_TA_paloalto_settings\\/all_settings_id";
@@ -18,6 +18,8 @@ $(document).ready(function() {
     originFormWrapper.before(return_page());
 
     var currentAction = "New";
+    var tables = {};
+    var dialogs = {};
 
     function htmlEscape(str) {
         return String(str)
@@ -89,12 +91,12 @@ $(document).ready(function() {
         var creds = [];
         var credsMap = {};
         if (credentialSettings) {
-            for (var k in credentialSettings) {
-                if (isTrue(credentialSettings[k].removed)) {
-                    continue;
-                }
+            $.each( credentialSettings, function( k, value ) {
+                // if (isTrue(credentialSettings[k].removed)) {
+                //     continue;
+                // }
                 var rec = [k];
-                for (var i = 1; i < cols.length; i++) {
+                for ( var i = 1; i < cols.length; i++ ) {
                     var val = credentialSettings[k];
                     if (val === undefined || val == null) {
                         val = "";
@@ -103,13 +105,13 @@ $(document).ready(function() {
                 }
                 creds.push(rec);
                 credsMap[k] = rec;
-            }
+            });
         }
         return {
             "data": creds,
             "dataMap": credsMap,
         };
-    };
+    }
 
     //Get SETTINGS using Splunk REST Endpoints
     $.ajax({
@@ -186,19 +188,19 @@ $(document).ready(function() {
     function showDialog(dialogId){
         $("." + dialogId).css("display", "block");
         $(".shadow").css("display", "block");
-    };
+    }
 
     function hideDialog(dialogId){
         $("." + dialogId).css("display", "none");
         $(".shadow").css("display", "none");
-    };
+    }
 
     function hideDialogHandler(e){
         var btnIdToDialogId = {
             "passwordCredDialogBtnCancel": "passwordCredDialog",
         };
         hideDialog(btnIdToDialogId[e.target.id]);
-    };
+    }
 
     function enjectDialogForm(dialogId, formId, cols) {
         var form = $("#" + formId);
@@ -212,8 +214,7 @@ $(document).ready(function() {
             if (column.type == "password") {
                 type = "password";
             }
-            var input = undefined;
-            input = $("<input type='" + type + "' name='" + column.name_with_desc + "' id='" + column.id + "' " + column.required + "/>");
+            var input = $("<input type='" + type + "' name='" + column.name_with_desc + "' id='" + column.id + "' " + column.required + "/>");
             container.append(label);
             container.append(input);
             form.append(container);
@@ -226,7 +227,7 @@ $(document).ready(function() {
         container.append($("<input id='" + cancelBtnId + "' type='button' value='Cancel'/>"));
         form.append(container);
         $("#" + cancelBtnId).click(hideDialogHandler);
-    };
+    }
 
     function registerBtnClickHandler(did) {
         $("#" + dialogs[did].btnId).click(function(){
@@ -242,14 +243,14 @@ $(document).ready(function() {
             dialog.text(dialog.text().replace("Edit", "Add"));
             showDialog(did);
         });
-    };
+    }
 
-    function clearFlag(){
+    function clearFlag() {
         $("table thead td span").each(function(){
             $(this).removeClass("asque");
             $(this).removeClass("desque");
         });
-    };
+    }
 
     function submitForm(formId) {
         var formIdToDialog = {
@@ -310,7 +311,7 @@ $(document).ready(function() {
                 $("#" + tableId + " td:nth-child(" + (i + 1) + "),th:nth-child(" + i + ")").hide();
             }
         }
-    };
+    }
 
     function updateHeaders(tableId, cols){
         var theadTr = $("#" + tableId + " .tableHead>tr");
@@ -321,7 +322,7 @@ $(document).ready(function() {
         var td = $("<td><span data-idx='" + cols.length + "'>Action</span></td>");
         theadTr.append(td);
         hideColumns(tableId, cols);
-    };
+    }
 
     function editRow(e) {
         currentAction = "Edit";
@@ -331,7 +332,7 @@ $(document).ready(function() {
         var credName = $("input#" + table.columns[0].id);
         credName.prop("readonly", true);
         credName.css("background-color", "#D3D3D3");
-        var did = undefined;
+        var did;
         for (var dialogId in dialogs) {
             if (dialogs[dialogId].table.id == table.id) {
                 did = dialogId;
@@ -345,7 +346,7 @@ $(document).ready(function() {
             $("input#" + c.id).val(table.dataMap[rowIdAndTableId[0]][i]);
         });
         return false;
-    };
+    }
 
     function deleteRow(e) {
         var rowIdAndTableId = e.target.id.split("``");
@@ -360,13 +361,13 @@ $(document).ready(function() {
         }
         updateTable(table.id, table.data, table.columns);
         return false;
-    };
+    }
 
-    function updateTable(tableId, tableData, cols){
+    function updateTable(tableId, tableData, cols) {
         if (!tableData) {
-            return
+            return;
         }
-        tableLength = tableData.length;
+        var tableLength = tableData.length;
         // console.log("ROW COUNT: " + tableLength);
         if(tableLength >= 1) {
             $('#passwordBtnAdd').hide();
@@ -374,7 +375,7 @@ $(document).ready(function() {
             $('#passwordBtnAdd').show();
         }
         if(tableLength > 1) {
-            return
+            return;
         }
         var tbody = $("#" + tableId + " .tableBody");
         tbody.empty();
@@ -400,7 +401,7 @@ $(document).ready(function() {
             tbody.append(tr);
         });
         hideColumns(tableId, cols);
-    };
+    }
 
     // for (var tableId in tables) {
     //     updateHeaders(tableId, tables[tableId].columns);
@@ -418,7 +419,7 @@ $(document).ready(function() {
         if (settings.customized_settings["autofocus_api_key"]){
             $("#autofocus_api_key_id").val(settings["customized_settings"]["autofocus_api_key"]);
         }
-    };
+    }
 
     // updateCustomizedSettings(allSettings);
 
@@ -445,7 +446,7 @@ $(document).ready(function() {
         var log_level = $("#log_level_id").val();
         result["global_settings"] = {
             "log_level": log_level,
-        }
+        };
 
         // Credential Settings
         var credSettings = {
@@ -465,7 +466,7 @@ $(document).ready(function() {
         }
 
         // Customized Settings
-        var check_dict = {true:1, false:0}
+        var check_dict = {true:1, false:0};
         var user_defined_settings = {
             "wildfire_api_key": {
                 "type": "password",
@@ -475,7 +476,7 @@ $(document).ready(function() {
                 "type": "password",
                 "password": $("#autofocus_api_key_id").val()
             },
-        }
+        };
         result["customized_settings"] = user_defined_settings;
         return result;
     }
@@ -512,4 +513,4 @@ $(document).ready(function() {
         var jsonResult = JSON.stringify(getJSONResult());
         $(allSettingsEboxId).val(jsonResult);
     });
-})
+});
