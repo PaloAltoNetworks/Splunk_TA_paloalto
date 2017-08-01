@@ -1,5 +1,4 @@
 globalsetting_key = "global_settings"
-
 name = "name"
 value = "value"
 

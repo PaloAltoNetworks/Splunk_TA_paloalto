@@ -7,8 +7,9 @@ Networks devices (including Next-generation Firewalls and Panorama) using the
 device API that is object oriented and conceptually similar to interaction
 with the device via the GUI or CLI.
 
+* Documentation: http://pandevice.readthedocs.io
+* Overview: http://paloaltonetworks.github.io/pandevice
 * Free software: ISC License
-* Documentation: http://pandevice.readthedocs.org
 
 -----
 
@@ -96,16 +97,55 @@ Some operational commands have methods to refresh the variables in an object::
     # populates the version, serial, and model variables from the live device
     fw.refresh_system_info()
 
+See more examples in the `Usage Guide`_.
+
+
+Connect to PAN-OS 8.0 and higher
+--------------------------------
+
+PAN-OS 8.0 by default does not allow connections to the API with TLS 1.0. Unfortunately, the
+latest OSX and many linux distros come with OpenSSL versions that don't support
+TLS 1.1 or 1.2. OpenSSL 1.0.1 or higher is needed to connect to PAN-OS 8.0. If
+you try to connect with a lower version of OpenSSL, you'll get a connection error.
+There are two solutions:
+
+**Option 1: Upgrade OpenSSL** (more secure)
+
+*Mac OSX:* In Mac OSX you can't upgrade the built-in OpenSSL, but you can install your own python
+and OpenSSL using `Homebrew`_.  Follow this guide to get set up: `Definitive guide to python on OSX`_
+
+*Linux:* Use the instructions for your distribution's package manager to upgrade OpenSSL to 1.0.1 or higher.
+
+**Option 2: Enable TLS 1.0 on PAN-OS** (less secure)
+
+Follow the direction in the PAN-OS Administrator Guide:
+`Replace the Certificate for Inbound Management Traffic`_
+
+
+Contributors
+------------
+
+- Brian Torres-Gil - `github <https://github.com/btorresgil>`__
+- Garfield Freeman - `github <https://github.com/shinmog>`__
+- John Anderson - `github <https://github.com/lampwins>`__
+
+Thank you to Kevin Steves, creator of the pan-python library:
+    https://github.com/kevinsteves/pan-python
+
 
 .. _pan-python: http://github.com/kevinsteves/pan-python
-.. _Configuration Tree: http://pandevice.readthedocs.org/en/latest/configtree.html
+.. _Configuration Tree: http://pandevice.readthedocs.io/en/latest/configtree.html
+.. _Usage Guide: http://pandevice.readthedocs.io/en/latest/usage.html
+.. _Homebrew: https://brew.sh/
+.. _Definitive guide to python on OSX: https://medium.com/@briantorresgil/definitive-guide-to-python-on-mac-osx-65acd8d969d0
+.. _Replace the Certificate for Inbound Management Traffic: https://www.paloaltonetworks.com/documentation/80/pan-os/pan-os/certificate-management/replace-the-certificate-for-inbound-management-traffic
 
 .. |pypi| image:: https://img.shields.io/pypi/v/pandevice.svg
     :target: https://pypi.python.org/pypi/pandevice
     :alt: Latest version released on PyPi
 
 .. |rtd| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg
-    :target: http://pandevice.readthedocs.org/en/latest/?badge=latest
+    :target: http://pandevice.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 .. |coverage| image:: https://img.shields.io/coveralls/PaloAltoNetworks/pandevice/master.svg?label=coverage

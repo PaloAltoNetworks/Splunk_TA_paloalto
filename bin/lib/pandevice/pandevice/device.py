@@ -14,20 +14,18 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-# Author: Brian Torres-Gil <btorres-gil@paloaltonetworks.com>
-
 """Device module contains objects that exist in the 'Device' tab in the firewall GUI"""
 
-import logging
-from base import PanObject, Root, MEMBER, ENTRY
-from base import VarPath as Var
+from pandevice.base import PanObject, Root, MEMBER, ENTRY
+from pandevice.base import VarPath as Var
+from pandevice.base import VersionedPanObject
+from pandevice.base import VersionedParamPath
 
 # import other parts of this pandevice package
-import errors as err
+from pandevice import getlogger
+import pandevice.errors as err
 
-# set logging to nullhandler to prevent exceptions if logging not enabled
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
+logger = getlogger(__name__)
 
 
 class VsysResources(PanObject):
@@ -90,7 +88,6 @@ class Vsys(PanObject):
             or a list of :class:`pandevice.network.Interface` objects
 
     """
-
     XPATH = "/vsys"
     ROOT = Root.DEVICE
     SUFFIX = ENTRY
@@ -124,6 +121,7 @@ class NTPServer(PanObject):
 
     Args:
         address (str): The IP address of the NTP server
+
     """
     # TODO: Add authentication
     # TODO: Add PAN-OS pre-7.0 support
@@ -149,6 +147,7 @@ class NTPServerPrimary(NTPServer):
 
     Args:
         address (str): IP address or hostname of NTP server
+
     """
     XPATH = "/ntp-servers/primary-ntp-server"
 
@@ -160,6 +159,7 @@ class NTPServerSecondary(NTPServer):
 
     Args:
         address (str): IP address or hostname of NTP server
+
     """
     XPATH = "/ntp-servers/secondary-ntp-server"
 
@@ -172,7 +172,7 @@ class SystemSettings(PanObject):
     Args:
         hostname (str): The hostname of the device
         domain (str): The domain of the device
-        ip-address (str): Management interface IP address
+        ip_address (str): Management interface IP address
         netmask (str): Management interface netmask
         default_gateway (str): Management interface default gateway
         ipv6_address (str): Management interface IPv6 address
@@ -182,14 +182,12 @@ class SystemSettings(PanObject):
         timezone (str): Device timezone
         panorama (str): IP address of primary Panorama
         panorama2 (str):  IP address of secondary Panorama
-        login-banner (str): Login banner text
-        update-server (str): IP or hostname of the update server
+        login_banner (str): Login banner text
+        update_server (str): IP or hostname of the update server
 
     """
-
     ROOT = Root.DEVICE
     XPATH = "/deviceconfig/system"
-    NAME = "hostname"
     HA_SYNC = False
     CHILDTYPES = (
         "device.NTPServerPrimary",
@@ -214,3 +212,130 @@ class SystemSettings(PanObject):
             Var("login-banner"),
             Var("update-server"),
         )
+
+
+class PasswordProfile(VersionedPanObject):
+    """Password profile object
+
+    Args:
+        name (str): Password profile name
+        expiration (int): Number of days until the password expires
+        warning (int): Number of days warning before password expires
+        login_count (int): Post expiration admin login count
+        grace_period (int): Post expiration grace period
+
+    """
+    ROOT = Root.MGTCONFIG
+    SUFFIX = ENTRY
+
+    def _setup(self):
+        # xpaths
+        self._xpaths.add_profile(value='/password-profile')
+
+        # params
+        params = []
+
+        params.append(VersionedParamPath(
+            'expiration', vartype='int',
+            path='password-change/expiration-period'))
+        params.append(VersionedParamPath(
+            'warning', vartype='int',
+            path='password-change/expiration-warning-period'))
+        params.append(VersionedParamPath(
+            'login_count', vartype='int',
+            path='password-change/post-expiration-admin-login-count'))
+        params.append(VersionedParamPath(
+            'grace_period', vartype='int',
+            path='password-change/post-expiration-grace-period'))
+
+        self._params = tuple(params)
+
+
+class Administrator(VersionedPanObject):
+    """Administrator object
+
+    Args:
+        name (str): Admin name
+        authentication_profile (str): The authentication profile
+        web_client_cert_only (bool): Use only client certificate authentication (Web)
+        superuser (bool): Admin type - superuser
+        superuser_read_only (bool): Admin type - superuser, read only
+        panorama_admin (bool): Panonrama - a panorama admin only
+        device_admin (bool): Admin type - device admin
+        device_admin_read_only (bool): Admin type - device admin, read only
+        vsys (list/str): Physical firewalls: the vsys this admin should manage
+        vsys_read_only (list/str): Physical firewalls: the vsys this read only admin should manage
+        ssh_public_key (str): Use Public Key Authentication (SSH)
+        role_profile (str): The role based profile
+        password_hash (encrypted str): The encrypted password
+        password_profile (str): The password profile for this user
+
+    """
+    ROOT = Root.MGTCONFIG
+    SUFFIX = ENTRY
+
+    def _setup(self):
+        # xpaths
+        self._xpaths.add_profile(value='/users')
+
+        # params
+        params = []
+
+        params.append(VersionedParamPath(
+            'authentication_profile', path='authentication-profile'))
+        params.append(VersionedParamPath(
+            'web_client_cert_only', vartype='yesno',
+            path='client-certificate-only'))
+        params.append(VersionedParamPath(
+            'superuser', vartype='yesno',
+            path='permissions/role-based/superuser'))
+        params.append(VersionedParamPath(
+            'superuser_read_only', vartype='yesno',
+            path='permissions/role-based/superreader'))
+        params.append(VersionedParamPath(
+            'panorama_admin', vartype='yesno',
+            path='permissions/role-based/panorama-admin'))
+        params.append(VersionedParamPath(
+            'device_admin', vartype='exist',
+            path='permissions/role-based/deviceadmin'))
+        params.append(VersionedParamPath(
+            'device_admin_read_only', vartype='exist',
+            path='permissions/role-based/devicereader'))
+        params.append(VersionedParamPath(
+            'vsys', vartype='member',
+            path='permissions/role-based/vsysadmin/entry vsys_device/vsys'))
+        params.append(VersionedParamPath(
+            'vsys_read_only', vartype='member',
+            path='permissions/role-based/vsysreader' +
+                 '/entry vsys_read_only_device/vsys'))
+        params.append(VersionedParamPath(
+            'ssh_public_key', path='public-key'))
+        params.append(VersionedParamPath(
+            'role_profile', path='permissions/role-based/custom/profile'))
+        params.append(VersionedParamPath(
+            'password_hash', path='phash', vartype='encrypted'))
+        params.append(VersionedParamPath(
+            'password_profile', path='password-profile'))
+        params.append(VersionedParamPath(
+            'vsys_device', exclude=True, vartype='entry',
+            path='permissions/role-based/vsysadmin',
+            default='localhost.localdomain'))
+        params.append(VersionedParamPath(
+            'vsys_read_only_device', exclude=True, vartype='entry',
+            path='permissions/role-based/vsysreader',
+            default='localhost.localdomain'))
+
+        self._params = tuple(params)
+
+    def change_password(self, new_password):
+        """Update the password.
+
+        **Modifies the live device**
+
+        Args:
+            new_password (str): The new password for this user.
+
+        """
+        dev = self.nearest_pandevice()
+        self.password_hash = dev.request_password_hash(new_password)
+        self.update('password_hash')

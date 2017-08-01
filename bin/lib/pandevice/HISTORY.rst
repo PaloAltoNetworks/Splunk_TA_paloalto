@@ -3,6 +3,66 @@
 History
 =======
 
+0.4.1
+-----
+
+Released: 2017-05-12
+
+Status: Alpha
+
+- Add: Support new HA error added in PAN-OS 7.1
+- Fix: Issue where existing references are sometimes removed when adding a new reference
+- Fix: AttributeError on None when refreshing device-groups and none exist yet
+
+0.4.0
+-----
+
+Released: 2017-03-17
+
+Status: Alpha
+
+- Now supports PAN-OS 7.0, 7.1, and 8.0
+- Support added for the following Firewall/Panorama features:
+
+  - NAT
+  - OSPF
+  - Applications
+  - Services
+  - Interface Management Profiles
+
+- Support for some predefined objects (such as applications from content packs)
+- Convenience methods for common licensing functions
+- New introspective method to describe current state of object: about()
+
+
+Breaking-changes in this version, please update your scripts to account for the following:
+
+- `pandevice()` method changed to `nearest_pandevice()`
+- Arguments of `refresh()` method are in a different order for better consistency
+
+
+Full list of new PanObjects:
+
+- NatRule
+- ServiceObject
+- ServiceGroup
+- ApplicationObject
+- ApplicationGroup
+- ApplicationFilter
+- ApplicationContainer
+- RedistributionProfile
+- Ospf
+- OspfArea
+- OspfRange
+- OspfNssaExternalRange
+- OspfAreaInterface
+- OspfNeighbor
+- OspfAuthProfile
+- OspfAuthProfileMd5
+- OspfExportRules
+- ManagementProfile
+
+
 0.3.5
 -----
 
