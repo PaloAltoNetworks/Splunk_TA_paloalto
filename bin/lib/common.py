@@ -265,3 +265,24 @@ class SplunkConnector(object):
                               help="Use firewall credentials stored "
                                    "in Splunk app")
         return parser
+
+    def get_autofocus_apikey(self):
+        """Given a splunk session_key returns a clear text API Key from a splunk password container"""
+        try:
+            entities = entity.getEntities(['admin', 'passwords'],
+                                          namespace=self.APPNAME,
+                                          owner='nobody',
+                                          sessionKey=self.session_key)
+        except Exception as e:
+            self.exit_with_error("Could not get %s credentials from splunk. Error: %s" % (self.APPNAME, str(e)))
+        # return first set of credentials
+        for v in entities.values():
+            try:
+                info = json.loads(v['clear_password'])
+            except ValueError:
+                continue
+            if 'autofocus_api_key' in info:
+                return info['autofocus_api_key']
+        self.logger.warn(
+            "No AutoFocus API Key found, please set the API key in the Splunk_TA_paloalto App set up page")
+        self.exit_with_error("No AutoFocus API key is set, set apikey in App configuration.")
