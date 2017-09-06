@@ -29,7 +29,15 @@
                     {
                         "field": "disabled", 
                         "label": "Status"
-                    }
+                    },
+                    {
+                        "field": "feed_url", 
+                        "label": "Output Node Feed URL"
+                    },
+                    {
+                        "field": "credentials", 
+                        "label": "Feed Credentials"
+                    } 
                 ], 
                 "moreInfo": [
                     {
@@ -209,6 +217,91 @@
                         }
                     ], 
                     "title": "Aperture"
+                },
+                {
+                    "title": "MineMeld Feed", 
+                    "name": "minemeld_feed",
+                    "entity": [
+                        {
+                            "field": "name", 
+                            "help": "Enter a unique name for the data input", 
+                            "required": true, 
+                            "validators": [
+                                {
+                                    "type": "regex", 
+                                    "errorMsg": "Input Name must start with a letter and followed by alphabetic letters, digits or underscores.", 
+                                    "pattern": "^[a-zA-Z]\\w*$"
+                                }, 
+                                {
+                                    "errorMsg": "Length of input name should be between 1 and 100", 
+                                    "type": "string", 
+                                    "maxLength": 100, 
+                                    "minLength": 1
+                                }
+                            ], 
+                            "type": "text", 
+                            "label": "Name"
+                        }, 
+                        {
+                            "field": "interval", 
+                            "help": "Time interval of input in seconds.", 
+                            "required": true, 
+                            "validators": [
+                                {
+                                    "type": "regex", 
+                                    "errorMsg": "Interval must be an integer.", 
+                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$"
+                                }
+                            ], 
+                            "type": "text", 
+                            "label": "Interval"
+                        }, 
+                        {
+                            "field": "index", 
+                            "validators": [
+                                {
+                                    "errorMsg": "Length of index name should be between 1 and 80.", 
+                                    "type": "string", 
+                                    "maxLength": 80, 
+                                    "minLength": 1
+                                }
+                            ], 
+                            "required": true, 
+                            "defaultValue": "default", 
+                            "options": {
+                                "blackList": "^_.*$", 
+                                "endpointUrl": "data/indexes", 
+                                "createSearchChoice": true
+                            }, 
+                            "type": "singleSelect", 
+                            "label": "Index"
+                        }, 
+                        {
+                            "field": "feed_url", 
+                            "help": "", 
+                            "required": true, 
+                            "validators": [
+                                {
+                                    "errorMsg": "Max length of text input is 8192", 
+                                    "type": "string", 
+                                    "maxLength": 8192, 
+                                    "minLength": 0
+                                }
+                            ], 
+                            "type": "text", 
+                            "label": "Output Node Feed URL"
+                        }, 
+                        {
+                            "field": "credentials", 
+                            "help": "", 
+                            "required": false, 
+                            "options": {
+                                "referenceName": "account"
+                            }, 
+                            "type": "singleSelect", 
+                            "label": "Feed Credentials"
+                        }
+                    ]
                 }
             ], 
             "description": "Manage your data inputs", 
