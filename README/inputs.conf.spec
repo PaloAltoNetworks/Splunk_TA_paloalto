@@ -1,2 +1,5 @@
 [autofocus_export://<name>]
-label =
+label = 
+
+[aperture://<name>]
+global_account =

@@ -16,17 +16,17 @@
 Splunk modular input.
 '''
 
-from solnlib.modular_input.event import EventException
-from solnlib.modular_input.event import XMLEvent
-from solnlib.modular_input.event import HECEvent
-from solnlib.modular_input.event_writer import ClassicEventWriter
-from solnlib.modular_input.event_writer import HECEventWriter
-from solnlib.modular_input.checkpointer import CheckpointerException
-from solnlib.modular_input.checkpointer import KVStoreCheckpointer
-from solnlib.modular_input.checkpointer import FileCheckpointer
-from splunklib.modularinput.argument import Argument
-from solnlib.modular_input.modular_input import ModularInputException
-from solnlib.modular_input.modular_input import ModularInput
+from .checkpointer import CheckpointerException
+from .checkpointer import FileCheckpointer
+from .checkpointer import KVStoreCheckpointer
+from .event import EventException
+from .event import HECEvent
+from .event import XMLEvent
+from .event_writer import ClassicEventWriter
+from .event_writer import HECEventWriter
+from .modular_input import ModularInput
+from .modular_input import ModularInputException
+from ..packages.splunklib.modularinput.argument import Argument
 
 __all__ = ['EventException',
            'XMLEvent',

@@ -16,13 +16,13 @@
 A simple thread safe timer queue implementation which has O(logn) time complexity.
 '''
 
-
-import threading
 import Queue
-import traceback
 import logging
+import threading
+import traceback
 from time import time
-import sortedcontainers as sc
+
+from .packages import sortedcontainers as sc
 
 __all__ = ['Timer',
            'TimerQueueStruct',

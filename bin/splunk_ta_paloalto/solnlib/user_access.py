@@ -16,13 +16,12 @@
 Splunk user access control related utilities.
 '''
 
-import re
 import json
+import re
 
-from splunklib import binding
-
-from solnlib.utils import retry
-import solnlib.splunk_rest_client as rest_client
+from . import splunk_rest_client as rest_client
+from .packages.splunklib import binding
+from .utils import retry
 
 __all__ = ['ObjectACLException',
            'ObjectACL',

@@ -16,26 +16,27 @@
 This module provides a base class of Splunk modular input.
 '''
 
-import sys
-import urllib2
 import logging
+import sys
 import traceback
+import urllib2
 from abc import ABCMeta, abstractmethod
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
 
-from splunklib import binding
-from splunklib.modularinput.argument import Argument
-from splunklib.modularinput.scheme import Scheme
-from splunklib.modularinput.input_definition import InputDefinition
-from splunklib.modularinput.validation_definition import ValidationDefinition
+from ..packages.splunklib import binding
+from ..packages.splunklib.modularinput.argument import Argument
+from ..packages.splunklib.modularinput.scheme import Scheme
+from ..packages.splunklib.modularinput.input_definition import InputDefinition
+from ..packages.splunklib.modularinput.validation_definition import ValidationDefinition
 
-from solnlib import utils
-from solnlib.modular_input import checkpointer
-from solnlib.modular_input import event_writer
-from solnlib.orphan_process_monitor import OrphanProcessMonitor
+from .. import utils
+from . import checkpointer
+from . import event_writer
+from ..orphan_process_monitor import OrphanProcessMonitor
 
 __all__ = ['ModularInputException',
            'ModularInput']
@@ -179,9 +180,6 @@ class ModularInput(object):
 
     def _create_checkpointer(self):
         if self.use_kvstore_checkpointer:
-            checkpointer_name = ':'.join(
-                [self.app, self.config_name,
-                 self.kvstore_checkpointer_collection_name])
             checkpointer_name = ':'.join(
                 [self.app, self.config_name,
                  self.kvstore_checkpointer_collection_name])
