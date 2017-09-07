@@ -26,3 +26,7 @@ git-repositories/
 #sublime
 sftp-config.json
 SplunkBaseReady/
+
+#Builders
+githubrelease_app.sh
+splunkrelease_app.sh
