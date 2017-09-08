@@ -117,7 +117,15 @@ def pull_tags(apikey, stats):
         if len(r.json['tags']) < MAX_PAGE_SIZE:
             break
 
-    return all_tags
+    # Normalize the autofocus fields by adding a prefix of "aftag:".
+    normalized = []
+    for elm in all_tags:
+        d = {}
+        for k, v in elm.items():
+            d['aftag:{0}'.format(k)] = v
+        normalized.append(d)
+
+    return normalized
 
 
 @timer('clear_kvstore')
