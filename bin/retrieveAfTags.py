@@ -14,6 +14,7 @@ import json
 import requests
 import splunk.Intersplunk
 import splunk.mining.dcutils as dcu
+import splunk.rest
 import time
 
 import pan.afapi
@@ -143,7 +144,7 @@ def save_to_kvstore(all_tags, skey, stats):
 def _uri():
     """Returns the URL of the kvstore."""
     return '/'.join((
-        'https://127.0.0.1:8089',
+        splunk.rest.makeSplunkdUri().rstrip('/'),
         'servicesNS',
         'nobody',
         'Splunk_TA_paloalto',
