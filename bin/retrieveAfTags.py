@@ -14,6 +14,7 @@ import json
 import requests
 import splunk.Intersplunk
 import splunk.mining.dcutils as dcu
+import splunk.rest
 import time
 
 import pan.afapi
@@ -116,7 +117,15 @@ def pull_tags(apikey, stats):
         if len(r.json['tags']) < MAX_PAGE_SIZE:
             break
 
-    return all_tags
+    # Normalize the autofocus fields by adding a prefix of "aftag:".
+    normalized = []
+    for elm in all_tags:
+        d = {}
+        for k, v in elm.items():
+            d['aftag:{0}'.format(k)] = v
+        normalized.append(d)
+
+    return normalized
 
 
 @timer('clear_kvstore')
@@ -143,7 +152,7 @@ def save_to_kvstore(all_tags, skey, stats):
 def _uri():
     """Returns the URL of the kvstore."""
     return '/'.join((
-        'https://127.0.0.1:8089',
+        splunk.rest.makeSplunkdUri().rstrip('/'),
         'servicesNS',
         'nobody',
         'Splunk_TA_paloalto',
