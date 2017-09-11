@@ -1,0 +1,7 @@
+log_subtype,action
+Prevention Event,blocked
+Notification Event,deferred
+Provisional Event,deferred
+Access Violation,blocked
+Service Warning,allowed
+Post Detection Event,allowed
