@@ -5,8 +5,8 @@ Palo Alto Networks Add-on for Splunk
 Copyright (C) 2014-2016 Palo Alto Networks Inc. All Rights Reserved.
 
 * **Add-on Homepage:** https://splunkbase.splunk.com/app/2757
-* **Authors:** Brian Torres-Gil and Paul Nguyen - Palo Alto Networks
-* **Add-on Version:** 3.8.2
+* **Authors:** Brian Torres-Gil, Paul Nguyen, Garfield Freeman - Palo Alto Networks
+* **Add-on Version:** 6.0.0
 
 ### Description ###
  
@@ -42,5 +42,5 @@ From the directory `$SPLUNK_HOME/etc/apps/`, type the following command:
     
 ### Libraries Included ###
 
-**Pan-Python:** [Github] (https://github.com/kevinsteves/pan-python)
+**Pan-Python:** [Github] (https://github.com/kevinsteves/pan-python)  
 **PanDevice:** [Github] (https://github.com/PaloAltoNetworks/pandevice)
