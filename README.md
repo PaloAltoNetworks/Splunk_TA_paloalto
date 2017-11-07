@@ -22,13 +22,13 @@ provides the inputs and CIM-compatible knowledge to use with other Splunk
 Enterprise apps, such as the Splunk App for Enterprise Security and the
 Splunk App for PCI Compliance, and integrates with Splunk Adaptive Response.
 
-Documentation for this add-on is located at: http://pansplunk.readthedocs.io/
+Documentation for this add-on is located at: http://splunk.paloaltonetworks.com/
 
 ### Documentation ###
 
-**Installation and Getting Started:** http://pansplunk.readthedocs.io/en/latest/getting_started.html  
-**Release Notes:** http://pansplunk.readthedocs.io/en/latest/release_notes.html  
-**Support:** http://pansplunk.readthedocs.io/en/latest/support.html
+**Installation and Getting Started:** http://splunk.paloaltonetworks.com/getting_started.html  
+**Release Notes:** http://splunk.paloaltonetworks.com/release-notes.html  
+**Support:** http://splunk.paloaltonetworks.com/support.html
 
 ### Install from Git ###
 
