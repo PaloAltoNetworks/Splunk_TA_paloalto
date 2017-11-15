@@ -19,19 +19,14 @@ automatically.
 '''
 
 import json
-import splunktalib.common.log as log
-
+import logging
 import traceback
 
-from splunklib import binding
-
-from solnlib.utils import retry
-from solnlib.credentials import CredentialNotExistException
-from solnlib.credentials import CredentialManager
-import solnlib.splunk_rest_client as rest_client
-
-
-logger = log.Logs().get_logger("splunk_ta_paloalto_conf_manager")
+from . import splunk_rest_client as rest_client
+from .credentials import CredentialManager
+from .credentials import CredentialNotExistException
+from .packages.splunklib import binding
+from .utils import retry
 
 __all__ = ['ConfStanzaNotExistException',
            'ConfFile',
@@ -121,9 +116,9 @@ class ConfFile(object):
     def _decrypt_stanza(self, stanza_name, encrypted_stanza):
         encrypted_keys = [key for key in encrypted_stanza if
                           encrypted_stanza[key] == self.ENCRYPTED_TOKEN]
-        encrypted_fields = {}
         if encrypted_keys:
-            encrypted_fields['password'] = self._cred_mgr.get_password(stanza_name).replace("password``splunk_cred_sep``", "")
+            encrypted_fields = json.loads(
+                self._cred_mgr.get_password(stanza_name))
             for key in encrypted_keys:
                 encrypted_stanza[key] = encrypted_fields[key]
 
@@ -161,7 +156,7 @@ class ConfFile(object):
         return True
 
     @retry(exceptions=[binding.HTTPError])
-    def get(self, stanza_name):
+    def get(self, stanza_name, only_current_app=False):
         '''Get stanza from configuration file.
 
         :param stanza_name: Stanza name.
@@ -184,8 +179,14 @@ class ConfFile(object):
            >>> conf = cfm.get_conf('test')
            >>> conf.get('test_stanza')
         '''
+
         try:
-            stanza_mgr = self._conf.list(name=stanza_name)[0]
+            if only_current_app:
+                stanza_mgrs = self._conf.list(
+                    search='eai:acl.app={} name={}'.format(
+                        self._app, stanza_name.replace('=', r'\=')))
+            else:
+                stanza_mgrs = self._conf.list(name=stanza_name)
         except binding.HTTPError as e:
             if e.status != 404:
                 raise
@@ -194,12 +195,18 @@ class ConfFile(object):
                 'Stanza: %s does not exist in %s.conf' %
                 (stanza_name, self._name))
 
-        stanza = self._decrypt_stanza(stanza_mgr.name, stanza_mgr.content)
-        stanza['eai:access'] = stanza_mgr.access
+        if len(stanza_mgrs) == 0:
+            raise ConfStanzaNotExistException(
+                'Stanza: %s does not exist in %s.conf' %
+                (stanza_name, self._name))
+
+        stanza = self._decrypt_stanza(stanza_mgrs[0].name, stanza_mgrs[0].content)
+        stanza['eai:access'] = stanza_mgrs[0].access
+        stanza['eai:appName'] = stanza_mgrs[0].access.app
         return stanza
 
     @retry(exceptions=[binding.HTTPError])
-    def get_all(self):
+    def get_all(self, only_current_app=False):
         '''Get all stanzas from configuration file.
 
         :returns: All stanzas, like: {'test': {
@@ -219,9 +226,18 @@ class ConfFile(object):
            >>> conf.get_all()
         '''
 
-        stanza_mgrs = self._conf.list()
-        return {stanza_mgr.name: self._decrypt_stanza(
-            stanza_mgr.name, stanza_mgr.content) for stanza_mgr in stanza_mgrs}
+        if only_current_app:
+            stanza_mgrs = self._conf.list(search='eai:acl.app={}'.format(self._app))
+        else:
+            stanza_mgrs = self._conf.list()
+        res = {}
+        for stanza_mgr in stanza_mgrs:
+            name = stanza_mgr.name
+            key_values = self._decrypt_stanza(name, stanza_mgr.content)
+            key_values['eai:access'] = stanza_mgr.access
+            key_values['eai:appName'] = stanza_mgr.access.app
+            res[name] = key_values
+        return res
 
     @retry(exceptions=[binding.HTTPError])
     def update(self, stanza_name, stanza, encrypt_keys=None):
@@ -289,7 +305,7 @@ class ConfFile(object):
         try:
             self._conf.delete(stanza_name)
         except KeyError as e:
-            logger.error('Delete stanza: %s error: %s.',
+            logging.error('Delete stanza: %s error: %s.',
                           stanza_name, traceback.format_exc(e))
             raise ConfStanzaNotExistException(
                 'Stanza: %s does not exist in %s.conf' %
@@ -376,7 +392,11 @@ class ConfManager(object):
         '''
 
         if self._confs is None or refresh:
+            # Fix bug that can't pass `-` as app name.
+            curr_app = self._rest_client.namespace.app
+            self._rest_client.namespace.app = "dummy"
             self._confs = self._rest_client.confs
+            self._rest_client.namespace.app = curr_app
 
         try:
             conf = self._confs[name]

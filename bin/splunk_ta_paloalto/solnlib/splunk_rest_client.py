@@ -19,14 +19,18 @@ call instead of calling splunklib SDK directly in business logic code.
 '''
 
 import logging
+import os
 import traceback
-from cStringIO import StringIO
 import urllib2
+from cStringIO import StringIO
 
-import splunklib.binding as binding
-import splunklib.client as client
-
-from solnlib.splunkenv import get_splunkd_access_info
+from .net_utils import check_css_params
+from .net_utils import is_valid_hostname
+from .net_utils import is_valid_port
+from .net_utils import is_valid_scheme
+from .packages.splunklib import binding
+from .packages.splunklib import client
+from .splunkenv import get_splunkd_access_info
 
 __all__ = ['SplunkRestClient']
 
@@ -69,7 +73,7 @@ def _request_handler(context):
     '''
 
     try:
-        import requests
+        from .packages import requests
     except ImportError:
         # FIXME proxy ?
         return binding.handler(
@@ -178,9 +182,12 @@ class SplunkRestClient(client.Service):
     :type context: ``dict``
     '''
 
+    @check_css_params(scheme=is_valid_scheme, host=is_valid_hostname,
+                      port=is_valid_port)
     def __init__(self, session_key, app, owner='nobody',
                  scheme=None, host=None, port=None, **context):
-        if not all([scheme, host, port]):
+        # Only do splunkd URI discovery in SPLUNK env (SPLUNK_HOME is set)
+        if not all([scheme, host, port]) and os.environ.get('SPLUNK_HOME'):
             scheme, host, port = get_splunkd_access_info()
 
         handler = _request_handler(context)

@@ -21,8 +21,8 @@ import logging.handlers
 import os.path as op
 from threading import Lock
 
-from solnlib.pattern import Singleton
-from solnlib.splunkenv import make_splunkhome_path
+from .pattern import Singleton
+from .splunkenv import make_splunkhome_path
 
 __all__ = ['log_enter_exit',
            'LogException',

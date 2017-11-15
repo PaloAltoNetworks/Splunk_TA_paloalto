@@ -16,14 +16,17 @@
 This module contains Splunk credential related interfaces.
 '''
 
-import re
 import json
+import re
 
-from splunklib import binding
-
-from solnlib.utils import retry
-from solnlib.splunkenv import get_splunkd_access_info
-import solnlib.splunk_rest_client as rest_client
+from . import splunk_rest_client as rest_client
+from .net_utils import check_css_params
+from .net_utils import is_valid_hostname
+from .net_utils import is_valid_port
+from .net_utils import is_valid_scheme
+from .packages.splunklib import binding
+from .splunkenv import get_splunkd_access_info
+from .utils import retry
 
 __all__ = ['CredentialException',
            'CredentialNotExistException',
@@ -73,17 +76,23 @@ class CredentialManager(object):
     # Splunk credential separator
     SEP = '``splunk_cred_sep``'
 
+    # Splunk credential end mark
+    END_MARK = '``splunk_cred_sep``S``splunk_cred_sep``P``splunk_cred_sep``L``splunk_cred_sep``' \
+               'U``splunk_cred_sep``N``splunk_cred_sep``K``splunk_cred_sep``'
+
     def __init__(self, session_key, app, owner='nobody', realm=None,
                  scheme=None, host=None, port=None, **context):
         self._realm = realm
-        self._storage_passwords = rest_client.SplunkRestClient(
+        self.service = rest_client.SplunkRestClient(
             session_key,
             app,
             owner=owner,
             scheme=scheme,
             host=host,
             port=port,
-            **context).storage_passwords
+            **context)
+        self._storage_passwords = self.service.storage_passwords
+
 
     @retry(exceptions=[binding.HTTPError])
     def get_password(self, user):
@@ -133,25 +142,49 @@ class CredentialManager(object):
                                                   realm='realm_test')
            >>> cm.set_password('testuser1', 'password1')
         '''
+        length = 0
+        index = 1
+        while length < len(password):
+            curr_str = password[length:length + self.SPLUNK_CRED_LEN_LIMIT]
+            partial_user = self.SEP.join([user, str(index)])
+            self._update_password(partial_user, curr_str)
+            length += self.SPLUNK_CRED_LEN_LIMIT
+            index += 1
 
+        # Append another stanza to mark the end of the password
+        partial_user = self.SEP.join([user, str(index)])
+        self._update_password(partial_user, self.END_MARK)
+
+    @retry(exceptions=[binding.HTTPError])
+    def _update_password(self, user, password):
+        '''Update password.
+
+        :param user: User name.
+        :type user: ``string``
+        :param password: User password.
+        :type password: ``string``
+
+        Usage::
+
+           >>> from solnlib import credentials
+           >>> cm = credentials.CredentialManager(session_key,
+                                                  'Splunk_TA_test',
+                                                  realm='realm_test')
+           >>> cm._update_password('testuser1', 'password1')
+        '''
         try:
-            self.delete_password(user)
-        except CredentialNotExistException:
-            pass
-
-        if len(password) <= self.SPLUNK_CRED_LEN_LIMIT:
             self._storage_passwords.create(password, user, self._realm)
-        else:
-            # split the str_to_encrypt when len > 255
-            length = 0
-            while length < len(password):
-                curr_str = password[length:length + self.SPLUNK_CRED_LEN_LIMIT]
-                length += self.SPLUNK_CRED_LEN_LIMIT
+        except binding.HTTPError as ex:
+            if ex.status == 409:
+                all_passwords = self._get_all_passwords_in_realm()
+                for pwd_stanza in all_passwords:
+                    if pwd_stanza.realm == self._realm and pwd_stanza.username == user:
+                        pwd_stanza.update(password=password)
+                        return
+                raise ValueError("Can not get the password object for realm: %s user: %s" %(self._realm, user))
+            else:
+                raise ex
 
-                partial_user = self.SEP.join(
-                    [user, str(length / self.SPLUNK_CRED_LEN_LIMIT)])
-                self._storage_passwords.create(
-                    curr_str, partial_user, self._realm)
 
     @retry(exceptions=[binding.HTTPError])
     def delete_password(self, user):
@@ -171,28 +204,32 @@ class CredentialManager(object):
                                                   realm='realm_test')
            >>> cm.delete_password('testuser1')
         '''
+        all_passwords = self._get_all_passwords_in_realm()
+        deleted = False
+        ent_pattern = re.compile('(%s%s\d+)' % (user.replace('\\','\\\\'), self.SEP))
+        for password in all_passwords:
+            match = (user == password.username) \
+                    or ent_pattern.match(password.username)
+            if match and password.realm == self._realm:
+                password.delete()
+                deleted = True
 
-        try:
-            return self._storage_passwords.delete(user, self._realm)
-        except (binding.HTTPError, KeyError):
-            ent_pattern = re.compile('.*:(%s%s\d+):' % (user, self.SEP))
-            all_passwords = self._storage_passwords.list()
+        if not deleted:
+            raise CredentialNotExistException(
+                'Failed to delete password of realm=%s, user=%s' %
+                (self._realm, user))
 
-            deleted = False
-            for password in all_passwords:
-                match = ent_pattern.match(password.name)
-                if match and password.realm == self._realm:
-                    self._storage_passwords.delete(match.group(1), self._realm)
-                    deleted = True
-
-            if not deleted:
-                raise CredentialNotExistException(
-                    'Failed to delete password of realm=%s, user=%s' %
-                    (self._realm, user))
+    def _get_all_passwords_in_realm(self):
+        if self._realm:
+            all_passwords = self._storage_passwords.list(count=-1, search="realm={}"
+                                                                     .format(self._realm))
+        else:
+            all_passwords = self._storage_passwords.list(count=-1, search='')
+        return all_passwords
 
     @retry(exceptions=[binding.HTTPError])
     def _get_all_passwords(self):
-        all_passwords = self._storage_passwords.list()
+        all_passwords = self._storage_passwords.list(count=-1)
 
         results = {}
         ptn = re.compile(r'(.+){cred_sep}(\d+)'.format(cred_sep=self.SEP))
@@ -213,7 +250,12 @@ class CredentialManager(object):
                     results[actual_name] = exist_stanza
 
                 exist_stanza['clears'][index] = password.clear_password
-            else:
+
+        # Backward compatibility
+        # To deal with the password with only one stanza which is generated by the old version.
+        for password in all_passwords:
+            match = ptn.match(password.name)
+            if (not match) and (password.name not in results):
                 results[password.name] = {
                     'name': password.name,
                     'realm': password.realm,
@@ -226,8 +268,11 @@ class CredentialManager(object):
             if field_clear:
                 clear_password = ''
                 for index in sorted(field_clear.keys()):
-                    clear_password += field_clear[index]
-                    values['clear_password'] = clear_password
+                    if field_clear[index] != self.END_MARK:
+                        clear_password += field_clear[index]
+                    else:
+                        break
+                values['clear_password'] = clear_password
 
                 del values['clears']
 
@@ -235,6 +280,8 @@ class CredentialManager(object):
 
 
 @retry(exceptions=[binding.HTTPError])
+@check_css_params(scheme=is_valid_scheme, host=is_valid_hostname,
+                  port=is_valid_port)
 def get_session_key(username, password,
                     scheme=None, host=None, port=None, **context):
     '''Get splunkd access token.

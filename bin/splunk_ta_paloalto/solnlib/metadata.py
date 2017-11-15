@@ -20,7 +20,7 @@ import os
 import re
 import ConfigParser
 
-from solnlib.splunkenv import make_splunkhome_path
+from .splunkenv import make_splunkhome_path
 
 __all__ = ['MetadataReader']
 

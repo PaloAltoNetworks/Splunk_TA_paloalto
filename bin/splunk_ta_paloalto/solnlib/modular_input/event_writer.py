@@ -17,21 +17,20 @@ This module provides two kinds of event writers (ClassicEventWriter,
 HECEventWriter) to write Splunk modular input events.
 '''
 
-import sys
-import time
-import threading
 import logging
+import sys
+import threading
+import time
 import traceback
 from abc import ABCMeta, abstractmethod
 
-from splunklib import binding
-import solnlib.splunk_rest_client as rest_client
-from solnlib.splunkenv import get_splunkd_access_info
-
-import solnlib.utils as utils
-from solnlib.hec_config import HECConfig
-from solnlib.utils import retry
-from solnlib.modular_input.event import XMLEvent, HECEvent
+from .event import XMLEvent, HECEvent
+from .. import splunk_rest_client as rest_client
+from .. import utils
+from ..hec_config import HECConfig
+from ..packages.splunklib import binding
+from ..splunkenv import get_splunkd_access_info
+from ..utils import retry
 
 __all__ = ['ClassicEventWriter',
            'HECEventWriter']
@@ -149,9 +148,9 @@ class ClassicEventWriter(EventWriter):
 
         stdout = sys.stdout
 
+        data = ''.join([event for event in XMLEvent.format_events(events)])
         with self._lock:
-            for event in XMLEvent.format_events(events):
-                stdout.write(event)
+            stdout.write(data)
             stdout.flush()
 
 
@@ -172,7 +171,7 @@ class HECEventWriter(EventWriter):
     :type port: ``integer``
     :param hec_uri: (optional) If hec_uri and hec_token are provided, they will
        higher precedence than hec_input_name
-    :type hec_token: ``integer``
+    :type hec_token: ``string``
     :param context: Other configurations for Splunk rest client.
     :type context: ``dict``
 
@@ -188,6 +187,8 @@ class HECEventWriter(EventWriter):
     HTTP_EVENT_COLLECTOR_ENDPOINT = '/services/collector'
 
     description = 'HECEventWriter'
+
+    headers = [('Content-Type', 'application/json')]
 
     def __init__(self, hec_input_name, session_key,
                  scheme=None, host=None, port=None, hec_uri=None,
@@ -218,6 +219,71 @@ class HECEventWriter(EventWriter):
                                                          port=hec_port,
                                                          **context)
 
+    @staticmethod
+    def create_from_token(hec_uri, hec_token, **context):
+        '''Given HEC URI and HEC token, create HECEventWriter object.
+        This function simplifies the standalone mode HECEventWriter usage
+        (not in a modinput)
+
+        :param hec_uri: Http Event Collector URI, like https://localhost:8088
+        :type hec_uri: ``string``
+        :param hec_token: Http Event Collector token
+        :type hec_token: ``string``
+        :param context: Other configurations.
+        :type context: ``dict``
+        '''
+
+        return HECEventWriter(
+            None, None, None, None, None, hec_uri=hec_uri, hec_token=hec_token,
+            **context)
+
+    @staticmethod
+    def create_from_input(hec_input_name, splunkd_uri, session_key, **context):
+        '''Given HEC input stanza name, splunkd URI and splunkd session key,
+        create HECEventWriter object. HEC URI and token etc will be discovered
+        from HEC input stanza. When hitting HEC event limit, the underlying
+        code will increase the HEC event limit automatically by calling
+        corresponding REST API against splunkd_uri by using session_key
+
+        :param hec_input_name: Splunk HEC input name.
+        :type hec_input_name: ``string``
+        :param splunkd_uri: Splunkd URI, like https://localhost:8089
+        :type splunkd_uri: ``string``
+        :param session_key: Splunkd access token.
+        :type session_key: ``string``
+        :param context: Other configurations.
+        :type context: ``dict``
+        '''
+
+        scheme, host, port = utils.extract_http_scheme_host_port(splunkd_uri)
+        return HECEventWriter(
+            hec_input_name, session_key, scheme, host, port, **context)
+
+    @staticmethod
+    def create_from_token_with_session_key(
+            splunkd_uri, session_key, hec_uri, hec_token, **context):
+        '''Given Splunkd URI, Splunkd session key, HEC URI and HEC token,
+        create HECEventWriter object. When hitting HEC event limit, the event
+        writer will increase the HEC event limit automatically by calling
+        corresponding REST API against splunkd_uri by using session_key
+
+        :param splunkd_uri: Splunkd URI, like https://localhost:8089
+        :type splunkd_uri: ``string``
+        :param session_key: Splunkd access token.
+        :type session_key: ``string``
+        :param hec_uri: Http Event Collector URI, like https://localhost:8088
+        :type hec_uri: ``string``
+        :param hec_token: Http Event Collector token
+        :type hec_token: ``string``
+        :param context: Other configurations.
+        :type context: ``dict``
+        '''
+
+        scheme, host, port = utils.extract_http_scheme_host_port(splunkd_uri)
+        return HECEventWriter(
+            None, session_key, scheme, host, port, hec_uri=hec_uri,
+            hec_token=hec_token, **context)
+
     @retry(exceptions=[binding.HTTPError])
     def _get_hec_config(self, hec_input_name, session_key,
                         scheme, host, port, **context):
@@ -246,6 +312,12 @@ class HECEventWriter(EventWriter):
             if context.get('token'):
                 hinput['token'] = context['token']
 
+            if context.get('source'):
+                hinput['source'] = context['source']
+
+            if context.get('host'):
+                hinput['host'] = context['host']
+
             hec_input = hc.create_input(hec_input_name, hinput)
 
         limits = hc.get_limits()
@@ -265,17 +337,28 @@ class HECEventWriter(EventWriter):
             index=index, host=host, source=source, sourcetype=sourcetype)
 
     def write_events(self, events):
+        '''Write events to index in bulk.
+        :type events: list of Events
+        :param events: Event type objects to write.
+        '''
         if not events:
             return
 
+        last_ex = None
         for event in HECEvent.format_events(events):
             for i in xrange(self.WRITE_EVENT_RETRIES):
                 try:
                     self._rest_client.post(
                         self.HTTP_EVENT_COLLECTOR_ENDPOINT, body=event,
-                        headers=[('Content-Type', 'application/json')])
-                    break
+                        headers=self.headers)
                 except binding.HTTPError as e:
                     logging.error('Write events through HEC failed: %s.',
                                   traceback.format_exc(e))
+                    last_ex = e
                     time.sleep(2 ** (i + 1))
+                else:
+                    break
+            else:
+                # When failed after retry, we reraise the exception
+                # to exit the function to let client handle this situation
+                raise last_ex

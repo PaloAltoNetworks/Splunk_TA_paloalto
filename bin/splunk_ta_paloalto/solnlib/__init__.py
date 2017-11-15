@@ -16,27 +16,31 @@
 The Splunk Software Development Kit for Solutions.
 '''
 
-from solnlib import acl
-from solnlib import compression
-from solnlib import conf_manager
-from solnlib import credentials
-from solnlib import file_monitor
-from solnlib import hec_config
-from solnlib import ip_math
-from solnlib import log
-from solnlib import metadata
-from solnlib import net_utils
-from solnlib import orphan_process_monitor
-from solnlib import pattern
-from solnlib import server_info
-from solnlib import splunk_rest_client
-from solnlib import splunkenv
-from solnlib import time_parser
-from solnlib import timer_queue
-from solnlib import user_access
-from solnlib import utils
+from . import (
+    acl,
+    api_documenter,
+    compression,
+    conf_manager,
+    credentials,
+    file_monitor,
+    hec_config,
+    ip_math,
+    log,
+    metadata,
+    net_utils,
+    orphan_process_monitor,
+    pattern,
+    server_info,
+    splunk_rest_client,
+    splunkenv,
+    time_parser,
+    timer_queue,
+    user_access,
+    utils,
+)
 
 __all__ = ['acl',
+           'api_documenter',
            'compression',
            'conf_manager',
            'credentials',
@@ -56,4 +60,4 @@ __all__ = ['acl',
            'user_access',
            'utils']
 
-__version__ = '1.0.11'
+__version__ = '1.0.17-dev.230'

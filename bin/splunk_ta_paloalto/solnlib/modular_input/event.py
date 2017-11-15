@@ -173,7 +173,7 @@ class XMLEvent(Event):
         for event in events:
             stream.append(event._to_xml())
 
-        return [ET.tostring(stream)]
+        return [ET.tostring(stream, encoding='utf-8', method='xml')]
 
 
 class HECEvent(Event):

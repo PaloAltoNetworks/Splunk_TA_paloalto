@@ -18,11 +18,10 @@ This module contains splunk server info related functionalities.
 
 import json
 
-from splunklib import binding
-
-import solnlib.utils as utils
-from solnlib.utils import retry
-import solnlib.splunk_rest_client as rest_client
+from . import splunk_rest_client as rest_client
+from . import utils
+from .packages.splunklib import binding
+from .utils import retry
 
 __all__ = ['ServerInfo']
 

@@ -5,8 +5,8 @@ Palo Alto Networks Add-on for Splunk
 Copyright (C) 2014-2016 Palo Alto Networks Inc. All Rights Reserved.
 
 * **Add-on Homepage:** https://splunkbase.splunk.com/app/2757
-* **Authors:** Brian Torres-Gil and Paul Nguyen - Palo Alto Networks
-* **Add-on Version:** 3.8.2
+* **Authors:** Brian Torres-Gil, Paul Nguyen, Garfield Freeman - Palo Alto Networks
+* **Add-on Version:** 6.0.0
 
 ### Description ###
  
@@ -22,13 +22,13 @@ provides the inputs and CIM-compatible knowledge to use with other Splunk
 Enterprise apps, such as the Splunk App for Enterprise Security and the
 Splunk App for PCI Compliance, and integrates with Splunk Adaptive Response.
 
-Documentation for this add-on is located at: http://pansplunk.readthedocs.io/
+Documentation for this add-on is located at: http://splunk.paloaltonetworks.com/
 
 ### Documentation ###
 
-**Installation and Getting Started:** http://pansplunk.readthedocs.io/en/latest/getting_started.html  
-**Release Notes:** http://pansplunk.readthedocs.io/en/latest/release_notes.html  
-**Support:** http://pansplunk.readthedocs.io/en/latest/support.html
+**Installation and Getting Started:** http://splunk.paloaltonetworks.com/getting_started.html  
+**Release Notes:** http://splunk.paloaltonetworks.com/release-notes.html  
+**Support:** http://splunk.paloaltonetworks.com/support.html
 
 ### Install from Git ###
 
@@ -42,5 +42,5 @@ From the directory `$SPLUNK_HOME/etc/apps/`, type the following command:
     
 ### Libraries Included ###
 
-**Pan-Python:** [Github] (https://github.com/kevinsteves/pan-python)
+**Pan-Python:** [Github] (https://github.com/kevinsteves/pan-python)  
 **PanDevice:** [Github] (https://github.com/PaloAltoNetworks/pandevice)

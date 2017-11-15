@@ -12,10 +12,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from splunklib import binding
-
-from solnlib.utils import retry
-import solnlib.splunk_rest_client as rest_client
+from . import splunk_rest_client as rest_client
+from .packages.splunklib import binding
+from .utils import retry
 
 __all__ = ['HECConfig']
 
