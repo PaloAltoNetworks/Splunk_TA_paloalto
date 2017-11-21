@@ -8,10 +8,9 @@ global_account =
 feed_url = 
 credentials =
 
-[threatlist://<name>]
-description =
-interval =
-disabled =
-type =
-url =
-
+# [threatlist://<name>]
+# description =
+# interval =
+# disabled =
+# type =
+# url =
