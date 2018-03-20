@@ -528,7 +528,7 @@
                             "label": "AutoFocus API Key", 
                             "field": "autofocus_api_key", 
                             "defaultValue": "", 
-                            "help": "Used to retrieve reports from the AutoFocus Cloud. (https://www.paloaltonetworks.com/documentation/autofocus/autofocus/autofocus_api/get-started-with-the-autofocus-api/get-your-api-key#36712).", 
+                            "help": "Used to retrieve metadata about AutoFocus tags. This does not retrieve threat indicators, and requires a MineMeld Feed input to leverage the retrieved tag metadata. Please configure a MineMeld Feed input in the Inputs tab before adding an AutoFocus API key (https://www.paloaltonetworks.com/documentation/autofocus/autofocus/autofocus_api/get-started-with-the-autofocus-api/get-your-api-key).",
                             "validators": [
                                 {
                                     "minLength": 0, 
