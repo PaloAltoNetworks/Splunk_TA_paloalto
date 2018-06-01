@@ -23,6 +23,10 @@
                         "label": "Interval"
                     }, 
                     {
+                        "field": "indicator_timeout",
+                        "label": "Indicator Timeout"
+                    },
+                    {
                         "field": "index", 
                         "label": "Index"
                     }, 
@@ -291,6 +295,20 @@
                             "type": "text", 
                             "label": "Output Node Feed URL"
                         }, 
+                        {
+                            "field": "indicator_timeout",
+                            "help": "How long to retain indicators (in hours)",
+                            "required": true,
+                            "validators": [
+                                {
+                                    "type": "regex",
+                                    "errorMsg": "Interval must be an integer.",
+                                    "pattern": "^\\-[1-9]\\d*$|^\\d*$"
+                                }
+                            ],
+                            "type": "text",
+                            "label": "Indicator Timeout"
+                        },
                         {
                             "field": "credentials", 
                             "help": "", 

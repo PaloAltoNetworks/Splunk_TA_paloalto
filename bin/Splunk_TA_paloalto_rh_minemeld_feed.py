@@ -24,6 +24,15 @@ fields = [
         )
     ), 
     field.RestField(
+        'indicator_timeout',
+        required=False,
+        encrypted=False,
+        default='',
+        validator=validator.Pattern(
+            regex=r"""^\-[1-9]\d*$|^\d*$""",
+        )
+    ),
+    field.RestField(
         'index',
         required=True,
         encrypted=False,

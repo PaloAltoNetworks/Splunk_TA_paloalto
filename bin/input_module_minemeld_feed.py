@@ -62,26 +62,45 @@ def collect_events(helper, ew):
     """Collect the kvstore events from the feed."""
     # Get the short name for this feed.
     name = helper.get_input_stanza_names()
+    start = time.time()
+    try:
+        indicator_timeout = int(helper.get_arg('indicator_timeout')) * 3600
+    except ValueError:
+        # If this isn't set, timeout indicators immediately.
+        indicator_timeout = 0
     stats = {'input_name': name}
+
     helper.log_info('START Splunk_TA_paloalto indicator retrieval for "{0}"'.format(
         name))
 
-    # Delete kvstore events with this source.
-    delete_from_kvstore(helper, name, stats)
+    # Get the current indicators.
+    kvs_entries = pull_from_kvstore(helper, name, start, stats)
+    stats['previous_indicators'] = len(kvs_entries)
 
     # Retrieve current entries from the MineMeld feed.
-    entries = []
+    mmf_entries = []
     try:
-        entries = get_feed_entries(helper, name, stats)
+        mmf_entries = get_feed_entries(helper, name, start, stats)
     except requests.exceptions.HTTPError as e:
         helper.log_error('Failed to get entries for "{0}": {1}'.format(
             name, e))
-    stats['indicators'] = len(entries)
+        stats['error'] = str(e)
+    stats['feed_indicators'] = len(mmf_entries)
 
-    # Save the current entries to the kvstore.
-    save_to_kvstore(helper, name, entries, stats)
+    # Merge the two together, and determine which indicators should be expired.
+    rm_entries, retained_indicators = merge_entries(
+        mmf_entries, kvs_entries, start, indicator_timeout, stats)
+    stats['expired_indicators'] = len(rm_entries)
+    stats['indicators'] = len(mmf_entries) + retained_indicators
+
+    # Save new/updated indicators to the kvstore.
+    save_to_kvstore(helper, name, mmf_entries, stats)
+
+    # Delete the expired indicators.
+    remove_from_kvstore(helper, name, rm_entries, stats)
 
     # Write an event to the index giving some basic stats.
+    stats['total_time'] = time.time() - start
     save_stats_as_event(helper, ew, stats)
 
     # Done
@@ -89,30 +108,29 @@ def collect_events(helper, ew):
         name))
 
 
-@timer('clear_kvstore')
-def delete_from_kvstore(helper, name, stats):
-    """Deletes all kvstore entries for splunk_source `name`."""
+@timer('read_kvstore')
+def pull_from_kvstore(helper, name, start, stats):
+    """Retrieves all current indicators."""
     resp = helper.send_http_request(
         url=_uri(helper),
         headers=_headers(helper),
         method='GET',
         verify=False,
         parameters={'query': json.dumps({'splunk_source': name})})
-    cur_info = resp.json()
-    helper.log_info('Removing {0} previous entries for MineMeld feed "{1}"'.format(
-        len(cur_info), name))
-
-    resp = helper.send_http_request(
-        url=_uri(helper),
-        headers=_headers(helper),
-        method='DELETE',
-        verify=False,
-        parameters={'query': json.dumps({'splunk_source': name})})
     resp.raise_for_status()
+
+    ans = {}
+    for v in resp.json():
+        ans[v['indicator']] = {
+            '_key': v['_key'],
+            'is_present': False,
+            'splunk_last_seen': v.get('splunk_last_seen', 0.0)}
+
+    return ans
 
 
 @timer('retrieve_indicators')
-def get_feed_entries(helper, name, stats):
+def get_feed_entries(helper, name, start, stats):
     """Pulls the indicators from the minemeld feed."""
     feed_url = helper.get_arg('feed_url')
     feed_creds = helper.get_arg('credentials')
@@ -135,7 +153,33 @@ def get_feed_entries(helper, name, stats):
     feed_entries = resp.json()
 
     # Return the normalized events to be saved to the kv store.
-    return normalized(name, feed_entries)
+    return normalized(name, feed_entries, start)
+
+
+@timer('merge_indicators')
+def merge_entries(mmf_entries, kvs_entries, start, indicator_timeout, stats):
+    """
+    Merges the current indicators with previous, determining which should
+    be expired.
+    """
+    rm_entries = []
+    retained_indicators = 0
+
+    for mmfe in mmf_entries:
+        kvse = kvs_entries.get(mmfe['indicator'])
+        if kvse is not None:
+            kvse['is_present'] = True
+            mmfe['_key'] = kvse['_key']
+
+    for info in kvs_entries.itervalues():
+        if info['is_present']:
+            pass
+        elif info['splunk_last_seen'] + indicator_timeout < start:
+            rm_entries.append(info['_key'])
+        else:
+            retained_indicators += 1
+
+    return rm_entries, retained_indicators
 
 
 @timer('save_to_kvstore')
@@ -153,6 +197,35 @@ def save_to_kvstore(helper, name, entries, stats):
             method='POST',
             verify=False,
             payload=entries[i:i+500])
+        resp.raise_for_status()
+
+
+@timer('remove_from_kvstore')
+def remove_from_kvstore(helper, name, rm_entries, stats):
+    """Removes the specified entries from the kvstore."""
+    if not rm_entries:
+        return
+
+    helper.log_info('Removing {0} kvstore entries for MineMeld feed "{1}"'.format(
+        len(rm_entries), name))
+    url = _uri(helper)
+    headers = _headers(helper)
+
+    # Batch a few at a time, as splunk 414s if the URI is too long, or times
+    # out if it's within the length limits but still hits too many entries to
+    # finish on time.  From some tests, it seems like 500 is a good number,
+    # which is nice since it matches the batch_save number.
+    #
+    # The _key field has been 24 characters in length on my system.
+    for i in range(0, len(rm_entries), 500):
+        rms = rm_entries[i:i+500]
+        query = {'$or': list({'_key': x} for x in rms)}
+        resp = helper.send_http_request(
+            url=url,
+            headers=headers,
+            method='DELETE',
+            verify=False,
+            parameters={'query': json.dumps(query)})
         resp.raise_for_status()
 
 
@@ -187,7 +260,7 @@ def _headers(helper):
             helper.context_meta['session_key'])}
 
 
-def normalized(name, feed_entries):
+def normalized(name, feed_entries, start):
     """Returns a list of normalized kvstore entries."""
     data = []
     for feed_entry in feed_entries:
@@ -197,6 +270,7 @@ def normalized(name, feed_entries):
         # Make the entry dict.
         entry = feed_entry.copy()
         entry['splunk_source'] = name
+        entry['splunk_last_seen'] = start
 
         data.append(entry)
 
