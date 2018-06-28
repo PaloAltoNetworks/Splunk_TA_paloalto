@@ -9,6 +9,7 @@ import requests.exceptions
 import sys
 import time
 
+VERIFY_CERTIFICATE = True
 
 '''
     IMPORTANT
@@ -146,7 +147,9 @@ def get_feed_entries(helper, name, start, stats):
         url=feed_url,
         method='GET',
         parameters={'v': 'json', 'tr': 1},
-        headers=feed_headers)
+        headers=feed_headers,
+        verify=VERIFY_CERTIFICATE,
+    )
 
     # Raise exceptions on problems.
     resp.raise_for_status()
