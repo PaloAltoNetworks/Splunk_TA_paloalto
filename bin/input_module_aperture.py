@@ -100,7 +100,6 @@ def collect_events(helper, ew):
                 time=final_time,
                 data=json.dumps(data))
             ew.write_event(event)
-            time.sleep(3)
         elif r_status == 204:
             helper.log_debug("STATUS 204: No new events were found.")
             break
