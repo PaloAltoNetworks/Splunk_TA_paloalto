@@ -546,7 +546,7 @@
                             "label": "AutoFocus API Key", 
                             "field": "autofocus_api_key", 
                             "defaultValue": "", 
-                            "help": "Used to retrieve metadata about AutoFocus tags. This does not retrieve threat indicators, and requires a MineMeld Feed input to leverage the retrieved tag metadata. Please configure a MineMeld Feed input in the Inputs tab before adding an AutoFocus API key (https://www.paloaltonetworks.com/documentation/autofocus/autofocus/autofocus_api/get-started-with-the-autofocus-api/get-your-api-key).",
+                            "help": "Used to retrieve metadata about AutoFocus tags. Requires a MineMeld Feed input to download threat indicators. More info: https://splunk.paloaltonetworks.com/autofocus-and-minemeld.html",
                             "validators": [
                                 {
                                     "minLength": 0, 
@@ -562,7 +562,7 @@
                             "label": "WildFire API Key", 
                             "field": "wildfire_api_key", 
                             "defaultValue": "", 
-                            "help": "Used to retrieve reports from the WildFire Cloud.  An API Key is available from the WildFire Portal (https://wildfire.paloaltonetworks.com).", 
+                            "help": "Used to retrieve reports from the WildFire Cloud.  An API Key is available from the WildFire Portal. https://wildfire.paloaltonetworks.com",
                             "validators": [
                                 {
                                     "minLength": 0, 
