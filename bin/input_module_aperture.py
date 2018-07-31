@@ -75,7 +75,7 @@ def collect_events(helper, ew):
     token = get_auth_token(helper, opt_global_account, proxy_enabled)
     headers = {'Authorization': 'Bearer ' + token}
     method = 'GET'
-    url = "https://api.aperture.paloaltonetworks.com/api/v1/log_events"
+    url = "https://api.aperture.paloaltonetworks.com/api/v1/log_events_bulk"
     r_status = 200
     while r_status != 204:
         response = helper.send_http_request(
@@ -87,20 +87,23 @@ def collect_events(helper, ew):
         helper.log_debug(r_status)
         if r_status == 200:
             helper.log_debug("Adding data to index.")
-            data = response.json()
-            helper.log_debug(data)
-            timestamp = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
-            final_time = (timestamp - datetime.datetime.fromtimestamp(0)).total_seconds()
-            helper.log_debug(final_time)
-            event = helper.new_event(
-                host='api.aperture.paloaltonetworks.com',
-                source=helper.get_input_stanza_names(),
-                index=helper.get_output_index(),
-                sourcetype=helper.get_sourcetype(),
-                time=final_time,
-                data=json.dumps(data))
-            ew.write_event(event)
-            time.sleep(3)
+            events = response.json()['events']
+            for data in events:
+                helper.log_debug(data)
+                timestamp = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
+                final_time = (timestamp - datetime.datetime.fromtimestamp(0)).total_seconds()
+                helper.log_debug(final_time)
+                try:
+                    event = helper.new_event(
+                        host='api.aperture.paloaltonetworks.com',
+                        source=helper.get_input_stanza_names(),
+                        index=helper.get_output_index(),
+                        sourcetype=helper.get_sourcetype(),
+                        time=final_time,
+                        data=json.dumps(data))
+                    ew.write_event(event)
+                except Exception as e:
+                    ew.log_error('Error on parse event. ' + str(e))
         elif r_status == 204:
             helper.log_debug("STATUS 204: No new events were found.")
             break
