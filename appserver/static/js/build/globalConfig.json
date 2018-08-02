@@ -208,7 +208,31 @@
                                     "maxLength": 80
                                 }
                             ]
-                        }, 
+                        },
+                        {
+                            "label": "Region",
+                            "field": "region",
+                            "defaultValue": "us",
+                            "type": "singleSelect",
+                            "options": {
+                                "autoCompleteFields": [
+                                    {
+                                        "label": "US",
+                                        "value": "us"
+                                    },
+                                    {
+                                        "label": "Europe",
+                                        "value": "eu"
+                                    },
+                                    {
+                                        "label": "Asia Pacific",
+                                        "value": "apac"
+                                    }
+                                ],
+                                "disableSearch": true
+                            },
+                            "required": true
+                        },
                         {
                             "required": true, 
                             "type": "singleSelect", 
