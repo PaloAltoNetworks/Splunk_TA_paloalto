@@ -6,5 +6,10 @@ pan:traffic,Palo Alto Networks,Firewall,,Palo Alto Networks Firewall
 pan:hipmatch,Palo Alto Networks,Firewall,,Palo Alto Networks Firewall
 pan:wildfire_report,Palo Alto Networks,WildFire,,Palo Alto Networks Wildfire
 pan:newapps,Palo Alto Networks,Applipedia,,Palo Alto Networks Appliedia
-pan:endpoint,Palo Alto Networks,Endpoint,host,Palo Alto Networks Endpoint
+pan:traps4,Palo Alto Networks,Traps,host,Palo Alto Networks Traps
+pan:endpoint,Palo Alto Networks,Traps,host,Palo Alto Networks Traps
+pan:analytics_traps,Palo Alto Networks,Traps,host,Palo Alto Networks Traps
+pan:threat_traps,Palo Alto Networks,Traps,host,Palo Alto Networks Traps
+pan:system_traps,Palo Alto Networks,Traps,host,Palo Alto Networks Traps
+pan:config_traps,Palo Alto Networks,Traps,host,Palo Alto Networks Traps
 pan:aperture,Palo Alto Networks,Aperture,,Palo Alto Networks Aperture
