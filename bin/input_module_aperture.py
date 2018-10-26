@@ -21,6 +21,12 @@ def use_single_instance_mode():
     return True
 '''
 
+REGION_DOMAIN = {
+    'us': 'api.aperture.paloaltonetworks.com',
+    'eu': 'api.aperture-eu.paloaltonetworks.com',
+    'apac': 'api.aperture-apac.paloaltonetworks.com',
+}
+
 
 def validate_input(helper, definition):
     """Implement your own validation logic to
@@ -34,7 +40,9 @@ def get_auth_token(helper, opt_global_account, proxy_enabled):
     helper.log_debug("Start get_auth_token.")
     client_id = opt_global_account['username']
     secret = opt_global_account['password']
-    url = "https://api.aperture.paloaltonetworks.com/oauth/token"
+    region = helper.get_arg('region')
+    url_domain = REGION_DOMAIN[region]
+    url = "https://{0}/oauth/token".format(url_domain)
     method = "POST"
     parameters = {'scope': 'api_access',
                   'grant_type': 'client_credentials'}
@@ -66,6 +74,8 @@ def collect_events(helper, ew):
     log_level = helper.get_log_level()
     helper.set_log_level(log_level)
     opt_global_account = helper.get_arg('global_account')
+    region = helper.get_arg('region')
+    url_domain = REGION_DOMAIN[region]
     proxy_settings = helper.get_proxy()
     proxy_enabled = bool(proxy_settings)
     helper.log_debug("Checking if Proxy is enabled")
@@ -75,7 +85,7 @@ def collect_events(helper, ew):
     token = get_auth_token(helper, opt_global_account, proxy_enabled)
     headers = {'Authorization': 'Bearer ' + token}
     method = 'GET'
-    url = "https://api.aperture.paloaltonetworks.com/api/v1/log_events"
+    url = "https://{0}/api/v1/log_events_bulk".format(url_domain)
     r_status = 200
     while r_status != 204:
         response = helper.send_http_request(
@@ -87,20 +97,23 @@ def collect_events(helper, ew):
         helper.log_debug(r_status)
         if r_status == 200:
             helper.log_debug("Adding data to index.")
-            data = response.json()
-            helper.log_debug(data)
-            timestamp = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
-            final_time = (timestamp - datetime.datetime.fromtimestamp(0)).total_seconds()
-            helper.log_debug(final_time)
-            event = helper.new_event(
-                host='api.aperture.paloaltonetworks.com',
-                source=helper.get_input_stanza_names(),
-                index=helper.get_output_index(),
-                sourcetype=helper.get_sourcetype(),
-                time=final_time,
-                data=json.dumps(data))
-            ew.write_event(event)
-            time.sleep(3)
+            events = response.json()['events']
+            for data in events:
+                helper.log_debug(data)
+                timestamp = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%dT%H:%M:%SZ')
+                final_time = (timestamp - datetime.datetime.fromtimestamp(0)).total_seconds()
+                helper.log_debug(final_time)
+                try:
+                    event = helper.new_event(
+                        host=url_domain,
+                        source=helper.get_input_stanza_names(),
+                        index=helper.get_output_index(),
+                        sourcetype=helper.get_sourcetype(),
+                        time=final_time,
+                        data=json.dumps(data))
+                    ew.write_event(event)
+                except Exception as e:
+                    ew.log_error('Error on parse event. ' + str(e))
         elif r_status == 204:
             helper.log_debug("STATUS 204: No new events were found.")
             break

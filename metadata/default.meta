@@ -7,6 +7,6 @@ export = system
 access = read : [ * ], write : [ admin ]
 export = none
 
-# Do not export commands 
+# Export commands
 [commands]
-export = none
+export = system
