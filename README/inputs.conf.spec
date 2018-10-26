@@ -1,5 +1,6 @@
 [autofocus_export://<name>]
 label = 
+interval =
 
 [aperture://<name>]
 global_account =
