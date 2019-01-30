@@ -84,3 +84,7 @@ pandoc-config.json
 
 # Working directory for builder
 working/
+
+#Eventgen
+samples/
+default/eventgen.conf
