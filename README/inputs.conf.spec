@@ -12,7 +12,7 @@ indicator_timeout =
 credentials =
 
 # [threatlist://<name>]
-# descriptionk =
+# description =
 # interval =
 # disabled =
 # type =
