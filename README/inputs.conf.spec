@@ -4,6 +4,7 @@ interval =
 
 [aperture://<name>]
 global_account =
+region = 
 
 [minemeld_feed://<name>]
 feed_url = 

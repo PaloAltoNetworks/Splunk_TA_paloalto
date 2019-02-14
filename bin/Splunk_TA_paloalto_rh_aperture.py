@@ -32,6 +32,13 @@ fields = [
             max_len=80, 
             min_len=1, 
         )
+    ),
+    field.RestField(
+        'region',
+        required=True,
+        encrypted=False,
+        default='',
+        validator=None
     ), 
     field.RestField(
         'global_account',

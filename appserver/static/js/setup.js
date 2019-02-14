@@ -9,7 +9,7 @@ $(document).ready(function () {
     }).success(function () {
       console.log('Firewall API Key Deleted.');
     }).error(function () {
-      console.log('Error deleting API key.');
+      console.log('Error deleting Firewall API key.');
     });
   }
 

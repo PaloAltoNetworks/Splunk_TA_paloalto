@@ -2,7 +2,7 @@
 Palo Alto Networks Add-on for Splunk
 ====================================
 
-Copyright (C) 2014-2016 Palo Alto Networks Inc. All Rights Reserved.
+Copyright (C) 2014-2019 Palo Alto Networks Inc. All Rights Reserved.
 
 * **Add-on Homepage:** https://splunkbase.splunk.com/app/2757
 * **Authors:** Brian Torres-Gil, Paul Nguyen, Garfield Freeman - Palo Alto Networks
