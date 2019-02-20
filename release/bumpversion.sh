@@ -29,11 +29,14 @@ BUILD=${VERSION//./}0
 echo "Bumping version from ${CURRENT_VERSION} to ${VERSION} build ${BUILD}"
 # Files where version needs to be bumped
 APPCONF=default/app.conf
+APPMANIFEST=app.manifest
 README=README.md
 
 # Bump Versions
 sed -i '' -E 's/version = .+/version = '${VERSION}'/' ${APPCONF} ${APPCONF}
 echo "Bump ${APPCONF} version to ${VERSION}"
+sed -i '' -E 's/version": .+/version": '${VERSION}'/' ${APPMANIFEST} ${APPMANIFEST}
+echo "Bump ${APPMANIFEST} version to ${VERSION}"
 sed -i '' -E 's/build = .+/build = '${BUILD}'/' ${APPCONF} ${APPCONF}
 echo "Bump ${APPCONF} build to ${BUILD}"
 sed -i '' -E 's/Add-on Version:\*\* .+/Add-on Version:** '${VERSION}'/' ${README} ${README}
