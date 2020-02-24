@@ -89,9 +89,3 @@ working/
 samples/
 default/eventgen.conf
 bin/cred-init.json
-app_inspect.py
-appinspect.sh
-appinspect_report.sh
-appinspect_status.sh
-githubrelease_app.sh
-splunkrelease_app.sh
