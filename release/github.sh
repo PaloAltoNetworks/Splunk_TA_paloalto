@@ -30,7 +30,7 @@ VERSION=$1
 CURRENT_VERSION=`grep -o '^version = [0-9a-z.-]*' default/app.conf | awk '{print $3}'`
 # Files where version needs to be bumped
 APPCONF=default/app.conf
-APPMANIFEST=default/app.manifest
+APPMANIFEST=app.manifest
 README=README.md
 
 git checkout develop
