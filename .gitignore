@@ -88,3 +88,4 @@ working/
 #Eventgen
 samples/
 default/eventgen.conf
+bin/cred-init.json

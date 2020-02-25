@@ -35,7 +35,7 @@ README=README.md
 # Bump Versions
 sed -i '' -E 's/version = .+/version = '${VERSION}'/' ${APPCONF} ${APPCONF}
 echo "Bump ${APPCONF} version to ${VERSION}"
-sed -i '' -E 's/version": .+/version": '${VERSION}'/' ${APPMANIFEST} ${APPMANIFEST}
+sed -i '' -E 's/version": .+/version": '\"${VERSION}\"'/' ${APPMANIFEST} ${APPMANIFEST}
 echo "Bump ${APPMANIFEST} version to ${VERSION}"
 sed -i '' -E 's/build = .+/build = '${BUILD}'/' ${APPCONF} ${APPCONF}
 echo "Bump ${APPCONF} build to ${BUILD}"
