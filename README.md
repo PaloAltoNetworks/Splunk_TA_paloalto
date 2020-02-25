@@ -6,7 +6,7 @@ Copyright (C) 2014-2019 Palo Alto Networks Inc. All Rights Reserved.
 
 * **Add-on Homepage:** https://splunkbase.splunk.com/app/2757
 * **Authors:** Brian Torres-Gil, Paul Nguyen, Garfield Freeman - Palo Alto Networks
-* **Add-on Version:** 6.1.1
+* **Add-on Version:** 6.2.0
 
 ### Description ###
  
