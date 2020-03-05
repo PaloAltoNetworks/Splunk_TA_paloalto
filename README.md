@@ -2,8 +2,6 @@
 Palo Alto Networks Add-on for Splunk
 ====================================
 
-Copyright (C) 2014-2019 Palo Alto Networks Inc. All Rights Reserved.
-
 * **Add-on Homepage:** https://splunkbase.splunk.com/app/2757
 * **Authors:** Brian Torres-Gil, Paul Nguyen, Garfield Freeman - Palo Alto Networks
 * **Add-on Version:** 6.2.0
@@ -44,3 +42,5 @@ From the directory `$SPLUNK_HOME/etc/apps/`, type the following command:
 
 **Pan-Python:** [Github] (https://github.com/kevinsteves/pan-python)  
 **PanDevice:** [Github] (https://github.com/PaloAltoNetworks/pandevice)
+
+Copyright (C) 2014-2020 Palo Alto Networks Inc. All Rights Reserved.
