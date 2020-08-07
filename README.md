@@ -1,6 +1,14 @@
 
-Palo Alto Networks Add-on for Splunk
-====================================
+# This repo has moved
+
+** Please read **
+
+This Splunk Add-on repository was moved to shared repository with the Splunk App. This makes it easier to develop and build the community around these apps by having them all in the same place. You can find the Palo Alto Networks App and Add-on at https://github.com/PaloAltoNetworks/Splunk-Apps
+
+Issues and pull requests have also been transfered to the new repository and this repository has been archived.
+
+## Palo Alto Networks Add-on for Splunk
+
 
 * **Add-on Homepage:** https://splunkbase.splunk.com/app/2757
 * **Authors:** Brian Torres-Gil, Paul Nguyen, Garfield Freeman - Palo Alto Networks
